@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: yeyak-itda
+  config.activate.on-profile: test
+  datasource.url: jdbc:h2:mem:testdb

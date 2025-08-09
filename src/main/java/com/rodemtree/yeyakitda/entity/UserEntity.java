@@ -12,19 +12,27 @@ public class UserEntity extends BaseEntity{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true, nullable = false)
     private String email;
 
+    @Column(nullable = false)
     private String password;
 
+    @Column(nullable = false)
     private String name;
 
+    @Column(unique = true, nullable = false)
     private String nickname;
 
+    @Column(nullable = false)
     private String address;
 
+    @Column(unique = true, nullable = false)
     private String phoneNumber;
 
-    private String role;
+    @Column(unique = true, nullable = false)
+    @Enumerated(EnumType.STRING)
+    private UserRole role;
 
     @Builder
     private UserEntity(String email, String password, String name, String nickname, String address, String phoneNumber) {
@@ -34,5 +42,9 @@ public class UserEntity extends BaseEntity{
         this.nickname = nickname;
         this.address = address;
         this.phoneNumber = phoneNumber;
+    }
+
+    public void setDefaultRole() {
+        this.role = UserRole.ROLE_USER;
     }
 }

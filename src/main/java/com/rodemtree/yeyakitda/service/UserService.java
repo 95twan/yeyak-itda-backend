@@ -27,6 +27,7 @@ public class UserService {
         String encodedPassword = passwordEncoder.encode(dto.password());
 
         UserEntity userEntity = userMapper.signUpRequestDtotToUserEntity(dto, encodedPassword);
+        userEntity.setDefaultRole();
 
         userRepository.save(userEntity);
     }
