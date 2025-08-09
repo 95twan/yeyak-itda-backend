@@ -22,12 +22,17 @@ public class UserEntity extends BaseEntity{
 
     private String address;
 
+    private String phoneNumber;
+
+    private String role;
+
     @Builder
-    private UserEntity(String email, String password, String name, String nickname, String address) {
+    private UserEntity(String email, String password, String name, String nickname, String address, String phoneNumber) {
         this.email = email;
         this.password = password;
         this.name = name;
         this.nickname = nickname;
         this.address = address;
+        this.phoneNumber = phoneNumber;
     }
 }
