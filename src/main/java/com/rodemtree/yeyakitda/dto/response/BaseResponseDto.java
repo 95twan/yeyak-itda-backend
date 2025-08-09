@@ -4,11 +4,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record BaseResponseDto(
-        int code,
+        int status,
         String message,
         Object data
 ) {
-    public static BaseResponseDto of(int code, String message) {
-        return new BaseResponseDto(code, message, null);
+    public static BaseResponseDto of(int status, String message) {
+        return new BaseResponseDto(status, message, null);
     }
 }

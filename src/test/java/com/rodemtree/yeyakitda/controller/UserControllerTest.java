@@ -12,6 +12,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -23,6 +24,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.Mockito.never;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @DisplayName("컨트롤러 - 유저")
@@ -45,12 +47,18 @@ class UserControllerTest {
         // Given
         SignUpRequestDto dto = createSignUpRequestDto();
         willDoNothing().given(userService).signUp(any());
+        int expectedStatus = HttpStatus.CREATED.value();
+        String expectedMessage = "성공적으로 회원가입 되었습니다.";
 
         // When & Then
         mockMvc.perform(post("/api/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dto))
-        ).andExpect(status().isCreated());
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto))
+                )
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value(expectedStatus))
+                .andExpect(jsonPath("$.message").value(expectedMessage))
+                .andExpect(jsonPath("$.data").doesNotExist());
 
         then(userService).should().signUp(any());
     }
