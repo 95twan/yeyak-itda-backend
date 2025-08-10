@@ -1,5 +1,9 @@
 spring:
   application:
     name: yeyak-itda
-  config.activate.on-profile: test
   datasource.url: jdbc:h2:mem:testdb
+
+jwt:
+  secret: my-super-secret-key-for-jwt-should-be-long-enough
+  expiration:
+    access: 3600000

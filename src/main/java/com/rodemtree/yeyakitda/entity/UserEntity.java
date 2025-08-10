@@ -7,30 +7,32 @@ import lombok.*;
 @Getter
 @NoArgsConstructor
 @Entity
-public class UserEntity extends BaseEntity{
+@Table(name = "users")
+public class UserEntity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(name = "email", length = 64, unique = true, nullable = false)
     private String email;
 
-    @Column(nullable = false)
+    @Column(name = "password", length = 256, nullable = false)
     private String password;
 
-    @Column(nullable = false)
+    @Column(name = "name", length = 32, nullable = false)
     private String name;
 
-    @Column(unique = true, nullable = false)
+    @Column(name = "nickname", length = 64, unique = true, nullable = false)
     private String nickname;
 
-    @Column(nullable = false)
+    @Column(name = "address", length = 128, nullable = false)
     private String address;
 
-    @Column(unique = true, nullable = false)
+    @Column(name = "phone_number", length = 32, unique = true, nullable = false)
     private String phoneNumber;
 
-    @Column(unique = true, nullable = false)
+    @Column(name = "role", length = 32, nullable = false)
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
