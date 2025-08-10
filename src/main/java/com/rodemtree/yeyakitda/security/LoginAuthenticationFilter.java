@@ -29,7 +29,7 @@ public class LoginAuthenticationFilter extends UsernamePasswordAuthenticationFil
     public LoginAuthenticationFilter(JwtUtil jwtUtil, ObjectMapper objectMapper) {
         this.jwtUtil = jwtUtil;
         this.objectMapper = objectMapper;
-        setFilterProcessesUrl("/api/auth");
+        setFilterProcessesUrl("/api/auth/login");
     }
 
     @Override

@@ -2,7 +2,9 @@ package com.rodemtree.yeyakitda.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rodemtree.yeyakitda.dto.response.BaseResponseDto;
+import com.rodemtree.yeyakitda.security.JwtAuthenticationFilter;
 import com.rodemtree.yeyakitda.security.LoginAuthenticationFilter;
+import com.rodemtree.yeyakitda.service.UserDetailsServiceImpl;
 import com.rodemtree.yeyakitda.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -33,12 +35,13 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/auth", "/api/users").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/users").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(customAuthenticationEntryPoint()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(jwtAuthenticationFilter(jwtUtil, objectMapper), LoginAuthenticationFilter.class)
                 .addFilterAt(loginAuthenticationFilter(authenticationManager), UsernamePasswordAuthenticationFilter.class)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
@@ -68,6 +71,11 @@ public class SecurityConfig {
         LoginAuthenticationFilter filter = new LoginAuthenticationFilter(jwtUtil, objectMapper);
         filter.setAuthenticationManager(authenticationManager);
         return filter;
+    }
+
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtUtil jwtUtil, ObjectMapper objectMapper) {
+        return new JwtAuthenticationFilter(jwtUtil, objectMapper);
     }
 
     @Bean
