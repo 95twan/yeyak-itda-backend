@@ -111,21 +111,6 @@ class UserServiceTest {
     }
 
 
-    @Disabled
-    @Test
-    @DisplayName("정상 - 존재하는 이메일과 비밀번호가 주어졌을 때 access-token을 발급한다.")
-    void loginTest() {
-        // Given
-
-
-        // When
-
-
-        // Then
-
-
-    }
-
     private SignUpRequestDto createSignUpRequestDto() {
         return SignUpRequestDto.of("김태완", "test@test.com", "test1234!", "rodem", "경기도 구리시", "010-1234-5678");
     }

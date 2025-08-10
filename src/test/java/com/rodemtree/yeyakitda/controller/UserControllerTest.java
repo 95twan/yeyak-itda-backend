@@ -1,7 +1,7 @@
 package com.rodemtree.yeyakitda.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rodemtree.yeyakitda.config.SecurityConfig;
+import com.rodemtree.yeyakitda.config.TestSecurityConfig;
 import com.rodemtree.yeyakitda.dto.request.SignUpRequestDto;
 import com.rodemtree.yeyakitda.service.UserService;
 import org.junit.jupiter.api.DisplayName;
@@ -16,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.stream.Stream;
 
@@ -23,12 +25,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.Mockito.never;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @DisplayName("컨트롤러 - 유저")
-@Import(SecurityConfig.class)
+@Import({TestSecurityConfig.class, UserControllerTest.TestController.class})
 @WebMvcTest(UserController.class)
 class UserControllerTest {
 
@@ -78,6 +81,26 @@ class UserControllerTest {
 
         then(userService).should(never()).signUp(any());
 
+    }
+
+    @RestController
+    static class TestController {
+        @GetMapping("/api/users/me")
+        public String getMyInfo() {
+            return "This is a secured endpoint for testing.";
+        }
+    }
+
+    @Test
+    @DisplayName("실패 - 인증 없이 보호된 API에 접근하면, 401 Unauthorized를 응답한다.")
+    void accessDeniedTest() throws Exception {
+        // Given
+
+        // When & Then
+        mockMvc.perform(get("/api/users/me")) // 아직 존재하지 않는, 인증이 필요한 가상의 API
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.message").value("인증이 필요한 서비스입니다."));
     }
 
     static Stream<Arguments> invalidSignUpRequests() {

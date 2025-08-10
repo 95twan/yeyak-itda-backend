@@ -9,6 +9,10 @@ public record BaseResponseDto(
         Object data
 ) {
     public static BaseResponseDto of(int status, String message) {
-        return new BaseResponseDto(status, message, null);
+        return BaseResponseDto.of(status, message, null);
+    }
+
+    public static BaseResponseDto of(int status, String message, Object data) {
+        return new BaseResponseDto(status, message, data);
     }
 }
