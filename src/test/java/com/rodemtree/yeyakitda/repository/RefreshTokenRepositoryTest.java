@@ -50,17 +50,17 @@ class RefreshTokenRepositoryTest {
         refreshTokenRepository.save(createRefreshToken(userEntity, "refresh-token"));
 
         // When & Then
-        assertThat(refreshTokenRepository.findByUser_Id(userEntity.getId())).isNotEmpty();
+        assertThat(refreshTokenRepository.findByUser_Email(userEntity.getEmail())).isNotEmpty();
     }
 
     @Test
     @DisplayName("실패 - 없는 userId로 refreshToken을 조회")
     void findWithNotExistUserIdTest() {
         // Given
-        Long notExistUserId = 999L;
+        String notExistEmail = "not@mail.com";
 
         // When & Then
-        assertThat(refreshTokenRepository.findByUser_Id(notExistUserId)).isEmpty();
+        assertThat(refreshTokenRepository.findByUser_Email(notExistEmail)).isEmpty();
     }
 
     @Test
@@ -70,7 +70,7 @@ class RefreshTokenRepositoryTest {
         UserEntity userEntity = userRepository.save(createUser());
 
         // When & Then
-        assertThat(refreshTokenRepository.findByUser_Id(userEntity.getId())).isEmpty();
+        assertThat(refreshTokenRepository.findByUser_Email(userEntity.getEmail())).isEmpty();
     }
 
     @Test

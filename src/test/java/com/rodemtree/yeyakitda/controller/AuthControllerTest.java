@@ -94,14 +94,14 @@ class AuthControllerTest {
         UserEntity user = userRepository.findByEmail(dto.email()).orElseThrow();
 
         // When & Then
-        assertThat(refreshTokenRepository.findByUser_Id(user.getId())).isEmpty();
+        assertThat(refreshTokenRepository.findByUser_Email(user.getEmail())).isEmpty();
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto))
                 )
                 .andExpect(status().isOk());
 
-        assertThat(refreshTokenRepository.findByUser_Id(user.getId())).isNotEmpty();
+        assertThat(refreshTokenRepository.findByUser_Email(user.getEmail())).isNotEmpty();
     }
 
     @Test
@@ -122,7 +122,7 @@ class AuthControllerTest {
                 )
                 .andExpect(status().isOk());
 
-        RefreshTokenEntity updatedRefreshToken = refreshTokenRepository.findByUser_Id(user.getId()).orElseThrow();
+        RefreshTokenEntity updatedRefreshToken = refreshTokenRepository.findByUser_Email(user.getEmail()).orElseThrow();
         assertThat(updatedRefreshToken.getToken()).isNotEqualTo(refreshToken);
     }
 

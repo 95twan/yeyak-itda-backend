@@ -6,6 +6,7 @@ import com.rodemtree.yeyakitda.repository.RefreshTokenRepository;
 import com.rodemtree.yeyakitda.repository.UserRepository;
 import com.rodemtree.yeyakitda.security.JwtAuthenticationFilter;
 import com.rodemtree.yeyakitda.security.LoginAuthenticationFilter;
+import com.rodemtree.yeyakitda.service.AuthService;
 import com.rodemtree.yeyakitda.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -30,8 +31,7 @@ public class SecurityConfig {
 
     private final ObjectMapper objectMapper;
     private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final AuthService authService;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
@@ -71,7 +71,7 @@ public class SecurityConfig {
 
     @Bean
     public LoginAuthenticationFilter loginAuthenticationFilter(AuthenticationManager authenticationManager) throws Exception {
-        LoginAuthenticationFilter filter = new LoginAuthenticationFilter(jwtUtil, objectMapper, userRepository, refreshTokenRepository);
+        LoginAuthenticationFilter filter = new LoginAuthenticationFilter(jwtUtil, objectMapper, authService);
         filter.setAuthenticationManager(authenticationManager);
         return filter;
     }

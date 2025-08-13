@@ -4,7 +4,6 @@ import com.rodemtree.yeyakitda.dto.request.SignUpRequestDto;
 import com.rodemtree.yeyakitda.entity.UserEntity;
 import com.rodemtree.yeyakitda.exception.DuplicateException;
 import com.rodemtree.yeyakitda.repository.UserRepository;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

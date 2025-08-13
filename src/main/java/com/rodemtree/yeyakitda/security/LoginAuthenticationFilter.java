@@ -5,13 +5,9 @@ import com.rodemtree.yeyakitda.dto.JwtUserInfoDto;
 import com.rodemtree.yeyakitda.dto.request.LoginRequestDto;
 import com.rodemtree.yeyakitda.dto.response.BaseResponseDto;
 import com.rodemtree.yeyakitda.dto.response.LoginSuccessResponseDto;
-import com.rodemtree.yeyakitda.entity.RefreshTokenEntity;
-import com.rodemtree.yeyakitda.entity.UserEntity;
 import com.rodemtree.yeyakitda.entity.UserRole;
-import com.rodemtree.yeyakitda.repository.RefreshTokenRepository;
-import com.rodemtree.yeyakitda.repository.UserRepository;
+import com.rodemtree.yeyakitda.service.AuthService;
 import com.rodemtree.yeyakitda.util.JwtUtil;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,14 +27,12 @@ public class LoginAuthenticationFilter extends UsernamePasswordAuthenticationFil
 
     private final JwtUtil jwtUtil;
     private final ObjectMapper objectMapper;
-    private final RefreshTokenRepository refreshTokenRepository;
-    private final UserRepository userRepository;
+    private final AuthService authService;
 
-    public LoginAuthenticationFilter(JwtUtil jwtUtil, ObjectMapper objectMapper, UserRepository userRepository, RefreshTokenRepository refreshTokenRepository) {
+    public LoginAuthenticationFilter(JwtUtil jwtUtil, ObjectMapper objectMapper, AuthService authService) {
         this.jwtUtil = jwtUtil;
         this.objectMapper = objectMapper;
-        this.userRepository = userRepository;
-        this.refreshTokenRepository = refreshTokenRepository;
+        this.authService = authService;
         setFilterProcessesUrl("/api/auth/login");
     }
 
@@ -49,7 +43,6 @@ public class LoginAuthenticationFilter extends UsernamePasswordAuthenticationFil
             LoginRequestDto loginRequestDto = objectMapper.readValue(request.getInputStream(), LoginRequestDto.class);
             String email = loginRequestDto.email();
             String password = loginRequestDto.password();
-
 
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(email, password);
 
@@ -74,17 +67,7 @@ public class LoginAuthenticationFilter extends UsernamePasswordAuthenticationFil
         String refreshToken = jwtUtil.createRefreshToken(userInfoDto);
         LocalDateTime expireAt = jwtUtil.getExpiration(refreshToken);
 
-        UserEntity userEntity = userRepository.findByEmail(userDetails.getUsername()).orElseThrow(() -> new EntityNotFoundException("인증된 사용자를 찾을 수 없습니다."));
-        refreshTokenRepository.findByUser_Id(userEntity.getId()).ifPresentOrElse(savedToken -> savedToken.updateRefreshToken(refreshToken, expireAt),
-                () -> {
-                    RefreshTokenEntity refreshTokenEntity = RefreshTokenEntity.builder()
-                            .token(refreshToken)
-                            .user(userEntity)
-                            .expireAt(expireAt)
-                            .build();
-                    refreshTokenRepository.save(refreshTokenEntity);
-                }
-        );
+        authService.updateRefreshToken(userDetails.getUsername(), refreshToken, expireAt);
 
         response.setStatus(HttpStatus.OK.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
