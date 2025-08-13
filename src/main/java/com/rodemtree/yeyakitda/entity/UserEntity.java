@@ -2,6 +2,7 @@ package com.rodemtree.yeyakitda.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 
 
 @Getter
@@ -11,7 +12,7 @@ import lombok.*;
 public class UserEntity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
+    @Column(name = "id", nullable = false)
     private Long id;
 
     @Column(name = "email", length = 64, unique = true, nullable = false)
