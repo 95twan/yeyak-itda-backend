@@ -12,12 +12,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 class JwtUtilTest {
     private static final String SECRET = "my-super-secret-key-for-jwt-should-be-long-enough";
     private static final long ACCESS_TOKEN_EXPIRATION = 1000L * 60 * 60; // 1시간
-    
+    private static final long REFRESH_TOKEN_EXPIRATION = 1000L * 60 * 60 * 24 * 7;
+
     private JwtUtil jwtUtil;
     
     @BeforeEach
     void setUp() {
-        jwtUtil = new JwtUtil(SECRET, ACCESS_TOKEN_EXPIRATION);
+        jwtUtil = new JwtUtil(SECRET, ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_EXPIRATION);
     }
 
     @Test
@@ -68,7 +69,7 @@ class JwtUtilTest {
     @DisplayName("성공 - 유효하지 않은 토큰은 false를 리턴한다.")
     void inValidTokenTest() {
         // Given
-        jwtUtil = new JwtUtil(SECRET, -ACCESS_TOKEN_EXPIRATION);
+        jwtUtil = new JwtUtil(SECRET, -ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_EXPIRATION);
         JwtUserInfoDto userInfoDto = createJwtUserInfoDto("test@test.com", UserRole.ROLE_USER);
         String token = jwtUtil.createAccessToken(userInfoDto);
 

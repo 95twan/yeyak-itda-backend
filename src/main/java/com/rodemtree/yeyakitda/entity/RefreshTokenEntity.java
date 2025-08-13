@@ -33,4 +33,10 @@ public class RefreshTokenEntity {
         this.token = token;
         this.expireAt = expireAt;
     }
+
+    public void updateRefreshToken(String token, LocalDateTime expireAt) {
+        this.token = token;
+        this.expireAt = expireAt;
+    }
+
 }
