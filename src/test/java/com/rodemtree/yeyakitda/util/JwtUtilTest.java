@@ -6,6 +6,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("유틸리티 - JWT")
@@ -47,6 +49,36 @@ class JwtUtilTest {
 
         // Then
         assertThat(extractedEmail).isEqualTo(userInfoDto.email());
+
+    }
+
+    @Test
+    @DisplayName("성공 - 유효한 토큰에서 토큰 타입을 추출한다.")
+    void getTypeFromTokenTest() {
+        // Given
+        JwtUserInfoDto userInfoDto = createJwtUserInfoDto("test@test.com", UserRole.ROLE_USER);
+        String token = jwtUtil.createAccessToken(userInfoDto);
+
+        // When
+        String type = jwtUtil.getType(token);
+
+        // Then
+        assertThat(type).isEqualTo("access");
+
+    }
+
+    @Test
+    @DisplayName("성공 - 유효한 토큰에서 토큰 만료일을 추출한다.")
+    void getExpirationFromTokenTest() {
+        // Given
+        JwtUserInfoDto userInfoDto = createJwtUserInfoDto("test@test.com", UserRole.ROLE_USER);
+        String token = jwtUtil.createAccessToken(userInfoDto);
+
+        // When
+        LocalDateTime expiration = jwtUtil.getExpiration(token);
+
+        // Then
+        assertThat(expiration).isNotNull();
 
     }
 
