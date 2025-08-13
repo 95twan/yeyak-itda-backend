@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 
 @Component
@@ -16,10 +18,12 @@ public class JwtUtil {
 
     private final SecretKey secretKey;
     private final long accessTokenExpiration;
+    private final long refreshTokenExpiration;
 
-    public JwtUtil(@Value("${jwt.secret}") String secret, @Value("${jwt.expiration.access}") long expiration) {
+    public JwtUtil(@Value("${jwt.secret}") String secret, @Value("${jwt.expiration.access}") long accessTokenExpirationexpiration, @Value("${jwt.expiration.refresh}") long refreshTokenExpiration) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-        this.accessTokenExpiration = expiration;
+        this.accessTokenExpiration = accessTokenExpirationexpiration;
+        this.refreshTokenExpiration = refreshTokenExpiration;
     }
 
     public String createAccessToken(JwtUserInfoDto userInfoDto) {
@@ -34,9 +38,17 @@ public class JwtUtil {
                 .compact();
     }
 
-    //Todo
     public String createRefreshToken(JwtUserInfoDto userInfoDto) {
-        return createAccessToken(userInfoDto);
+        Date now = new Date();
+        Date expirationDate = new Date(now.getTime() + refreshTokenExpiration);
+        return Jwts.builder()
+                .subject(userInfoDto.email())
+                .claim("role", userInfoDto.role().name())
+                .claim("type", "refresh")
+                .issuedAt(now)
+                .expiration(expirationDate)
+                .signWith(secretKey)
+                .compact();
     }
 
     public String getEmail(String token) {
@@ -45,6 +57,10 @@ public class JwtUtil {
 
     public String getRole(String token) {
         return getClaims(token).get("role", String.class);
+    }
+
+    public LocalDateTime getExpiration(String token) {
+        return getClaims(token).getExpiration().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
     }
 
     public boolean isTokenValid(String token) {

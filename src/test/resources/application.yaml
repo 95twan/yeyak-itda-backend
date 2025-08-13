@@ -7,3 +7,4 @@ jwt:
   secret: my-super-secret-key-for-jwt-should-be-long-enough
   expiration:
     access: 3600000
+    refresh: 604800000

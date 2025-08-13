@@ -4,7 +4,9 @@ package com.rodemtree.yeyakitda.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import com.rodemtree.yeyakitda.dto.request.LoginRequestDto;
+import com.rodemtree.yeyakitda.entity.RefreshTokenEntity;
 import com.rodemtree.yeyakitda.entity.UserEntity;
+import com.rodemtree.yeyakitda.repository.RefreshTokenRepository;
 import com.rodemtree.yeyakitda.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -43,6 +48,9 @@ class AuthControllerTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
 
 
     @BeforeEach
@@ -75,6 +83,47 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.accessToken").exists())
                 .andExpect(jsonPath("$.data.refreshToken").exists());
+    }
+
+    @Test
+    @DisplayName("성공 - 로그인 요청 시, 저장된 Refresh Token이 없다면 새 Refresh Token을 저장된다.")
+    @Transactional
+    void loginSavesRefreshToken() throws Exception {
+        // Given
+        LoginRequestDto dto = LoginRequestDto.of("test@test.com", "test1234!");
+        UserEntity user = userRepository.findByEmail(dto.email()).orElseThrow();
+
+        // When & Then
+        assertThat(refreshTokenRepository.findByUser_Email(user.getEmail())).isEmpty();
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto))
+                )
+                .andExpect(status().isOk());
+
+        assertThat(refreshTokenRepository.findByUser_Email(user.getEmail())).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("성공 - 로그인 요청 시, 저장된 Refresh Token이 있다면 새 Refresh Token으로 업데이트한다.")
+    @Transactional
+    void loginUpdateRefreshToken() throws Exception {
+        // Given
+        LoginRequestDto dto = LoginRequestDto.of("test@test.com", "test1234!");
+        UserEntity user = userRepository.findByEmail(dto.email()).orElseThrow();
+        String refreshToken = "refreshToken";
+        RefreshTokenEntity refreshTokenEntity = RefreshTokenEntity.builder().token(refreshToken).expireAt(LocalDateTime.now()).user(user).build();
+        refreshTokenRepository.save(refreshTokenEntity);
+
+        // When & Then
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto))
+                )
+                .andExpect(status().isOk());
+
+        RefreshTokenEntity updatedRefreshToken = refreshTokenRepository.findByUser_Email(user.getEmail()).orElseThrow();
+        assertThat(updatedRefreshToken.getToken()).isNotEqualTo(refreshToken);
     }
 
     @Test

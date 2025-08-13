@@ -6,6 +6,7 @@ import com.rodemtree.yeyakitda.dto.request.LoginRequestDto;
 import com.rodemtree.yeyakitda.dto.response.BaseResponseDto;
 import com.rodemtree.yeyakitda.dto.response.LoginSuccessResponseDto;
 import com.rodemtree.yeyakitda.entity.UserRole;
+import com.rodemtree.yeyakitda.service.AuthService;
 import com.rodemtree.yeyakitda.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -19,16 +20,19 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 
 public class LoginAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+
     private final JwtUtil jwtUtil;
     private final ObjectMapper objectMapper;
+    private final AuthService authService;
 
-
-    public LoginAuthenticationFilter(JwtUtil jwtUtil, ObjectMapper objectMapper) {
+    public LoginAuthenticationFilter(JwtUtil jwtUtil, ObjectMapper objectMapper, AuthService authService) {
         this.jwtUtil = jwtUtil;
         this.objectMapper = objectMapper;
+        this.authService = authService;
         setFilterProcessesUrl("/api/auth/login");
     }
 
@@ -39,7 +43,6 @@ public class LoginAuthenticationFilter extends UsernamePasswordAuthenticationFil
             LoginRequestDto loginRequestDto = objectMapper.readValue(request.getInputStream(), LoginRequestDto.class);
             String email = loginRequestDto.email();
             String password = loginRequestDto.password();
-
 
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(email, password);
 
@@ -62,6 +65,9 @@ public class LoginAuthenticationFilter extends UsernamePasswordAuthenticationFil
 
         String accessToken = jwtUtil.createAccessToken(userInfoDto);
         String refreshToken = jwtUtil.createRefreshToken(userInfoDto);
+        LocalDateTime expireAt = jwtUtil.getExpiration(refreshToken);
+
+        authService.updateRefreshToken(userDetails.getUsername(), refreshToken, expireAt);
 
         response.setStatus(HttpStatus.OK.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
