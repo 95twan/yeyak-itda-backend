@@ -200,4 +200,20 @@ class AuthControllerTest {
         mockMvc.perform(get("/api/users/me"))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    @DisplayName("실패 - 인증이 필요한 api 호출시, refreshToken을 헤더에 담아 요청하면 401 Unauthorized를 응답한다.")
+    void accessWithRefreshTokenTest() throws Exception {
+        // Given
+        LoginRequestDto dto = LoginRequestDto.of("test@test.com", "test1234!");
+        String responseBody = mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto))
+        ).andReturn().getResponse().getContentAsString();
+        String refreshToken = JsonPath.read(responseBody, "$.data.refreshToken");
+        // When & Then
+        mockMvc.perform(get("/api/users/me")
+                        .header("Authorization", "Bearer " + refreshToken))
+                .andExpect(status().isUnauthorized());
+    }
 }

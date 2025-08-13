@@ -32,6 +32,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .subject(userInfoDto.email())
                 .claim("role", userInfoDto.role().name())
+                .claim("type", "access")
                 .issuedAt(now)
                 .expiration(expirationDate)
                 .signWith(secretKey)
@@ -59,8 +60,22 @@ public class JwtUtil {
         return getClaims(token).get("role", String.class);
     }
 
+    // Todo - Enum 형식으로 고려
+    public String getType(String token) {
+        return getClaims(token).get("type", String.class);
+    }
+
     public LocalDateTime getExpiration(String token) {
         return getClaims(token).getExpiration().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+    }
+
+    public boolean isAccessToken(String token) {
+        try {
+            return "access".equals(getType(token));
+        } catch (Exception e) {
+            return false;
+        }
+
     }
 
     public boolean isTokenValid(String token) {
