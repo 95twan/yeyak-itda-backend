@@ -44,6 +44,7 @@ public class JwtUtil {
         return Jwts.builder()
                 .subject(userInfoDto.email())
                 .claim("role", userInfoDto.role().name())
+                .claim("type", "refresh")
                 .issuedAt(now)
                 .expiration(expirationDate)
                 .signWith(secretKey)
