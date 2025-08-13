@@ -39,7 +39,6 @@ public class JwtUtil {
                 .compact();
     }
 
-    //Todo
     public String createRefreshToken(JwtUserInfoDto userInfoDto) {
         Date now = new Date();
         Date expirationDate = new Date(now.getTime() + refreshTokenExpiration);

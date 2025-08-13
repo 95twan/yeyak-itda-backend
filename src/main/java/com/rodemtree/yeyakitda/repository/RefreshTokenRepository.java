@@ -1,7 +1,6 @@
 package com.rodemtree.yeyakitda.repository;
 
 import com.rodemtree.yeyakitda.entity.RefreshTokenEntity;
-import com.rodemtree.yeyakitda.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -11,5 +10,4 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshTokenEntity
     Optional<RefreshTokenEntity> findByToken(String token);
     Optional<RefreshTokenEntity> findByUser_Id(Long userId);
 
-    Long user(UserEntity user);
 }
