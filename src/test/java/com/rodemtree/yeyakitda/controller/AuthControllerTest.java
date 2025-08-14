@@ -1,7 +1,6 @@
 package com.rodemtree.yeyakitda.controller;
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import com.rodemtree.yeyakitda.dto.request.LoginRequestDto;

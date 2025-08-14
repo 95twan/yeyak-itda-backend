@@ -2,8 +2,6 @@ package com.rodemtree.yeyakitda.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rodemtree.yeyakitda.dto.response.BaseResponseDto;
-import com.rodemtree.yeyakitda.repository.RefreshTokenRepository;
-import com.rodemtree.yeyakitda.repository.UserRepository;
 import com.rodemtree.yeyakitda.security.JwtAuthenticationFilter;
 import com.rodemtree.yeyakitda.security.LoginAuthenticationFilter;
 import com.rodemtree.yeyakitda.service.AuthService;
