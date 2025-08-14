@@ -34,7 +34,7 @@ class AuthServiceTest {
 
     @Test
     @DisplayName("성공 - 신규 로그인 시, Refresh Token을 새로 저장한다.")
-    void newLoginSavesNewRefreshToken() {
+    void newLoginSavesNewRefreshTokenTest() {
         // Given
         String email = "test@test.com";
         String refreshToken = "refreshToken";
@@ -54,7 +54,7 @@ class AuthServiceTest {
 
     @Test
     @DisplayName("성공 - 재로그인 시, 기존 Refresh Token을 갱신한다.")
-    void newLoginUpdateExistRefreshToken() {
+    void newLoginUpdateExistRefreshTokenTest() {
         // Given
         String email = "test@test.com";
         String newRefreshToken = "newRefreshToken";
@@ -72,6 +72,23 @@ class AuthServiceTest {
         // Then
         then(refreshTokenEntity).should().updateRefreshToken(newRefreshToken, newExpireAt);
     }
+
+    @Test
+    @DisplayName("성공 - 사용자 이메일을 받으면, 해당 사용자의 Refresh Token을 삭제한다.")
+    void deleteRefreshTokenTest() {
+        // Given
+        String email = "test@test.com";
+        RefreshTokenEntity refreshTokenEntity = mock(RefreshTokenEntity.class);
+        given(refreshTokenRepository.findByUser_Email(email)).willReturn(Optional.of(refreshTokenEntity));
+
+        // When
+        authService.deleteRefreshToken(email);
+
+        // Then
+        then(refreshTokenRepository).should().delete(refreshTokenEntity);
+
+    }
+
 
     private UserEntity createUser(String email) {
         UserEntity userEntity = UserEntity.builder()

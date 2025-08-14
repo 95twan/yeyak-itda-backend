@@ -1,6 +1,7 @@
 package com.rodemtree.yeyakitda.controller;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import com.rodemtree.yeyakitda.dto.request.LoginRequestDto;
@@ -25,8 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -86,6 +86,32 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("실패 - 가입되지 않은 이메일로 로그인 요청 시, 401 Unauthorized를 응답한다.")
+    void loginWithUnregisteredEmailTest() throws Exception {
+        // Given
+        LoginRequestDto dto = LoginRequestDto.of("tttt@test.com", "test1234!");
+
+        // When & Then
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("실패 - 틀린 비밀번호로 로그인 요청 시, 401 Unauthorized를 응답한다.")
+    void loginWithWrongPasswordTest() throws Exception {
+        // Given
+        LoginRequestDto dto = LoginRequestDto.of("test@test.com", "test5678@");
+
+        // When & Then
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     @DisplayName("성공 - 로그인 요청 시, 저장된 Refresh Token이 없다면 새 Refresh Token을 저장된다.")
     @Transactional
     void loginSavesRefreshToken() throws Exception {
@@ -95,6 +121,7 @@ class AuthControllerTest {
 
         // When & Then
         assertThat(refreshTokenRepository.findByUser_Email(user.getEmail())).isEmpty();
+
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto))
@@ -124,32 +151,6 @@ class AuthControllerTest {
 
         RefreshTokenEntity updatedRefreshToken = refreshTokenRepository.findByUser_Email(user.getEmail()).orElseThrow();
         assertThat(updatedRefreshToken.getToken()).isNotEqualTo(refreshToken);
-    }
-
-    @Test
-    @DisplayName("실패 - 가입되지 않은 이메일로 로그인 요청 시, 401 Unauthorized를 응답한다.")
-    void loginWithUnregisteredEmailTest() throws Exception {
-        // Given
-        LoginRequestDto dto = LoginRequestDto.of("tttt@test.com", "test1234!");
-
-        // When & Then
-        mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @DisplayName("실패 - 틀린 비밀번호로 로그인 요청 시, 401 Unauthorized를 응답한다.")
-    void loginWithWrongPasswordTest() throws Exception {
-        // Given
-        LoginRequestDto dto = LoginRequestDto.of("test@test.com", "test5678@");
-
-        // When & Then
-        mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isUnauthorized());
     }
 
     @RestController
@@ -215,5 +216,27 @@ class AuthControllerTest {
         mockMvc.perform(get("/api/users/me")
                         .header("Authorization", "Bearer " + refreshToken))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void logoutTest() throws Exception {
+        // Given
+        LoginRequestDto dto = LoginRequestDto.of("test@test.com", "test1234!");
+        String responseBody = mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto))
+        ).andReturn().getResponse().getContentAsString();
+        String accessToken = JsonPath.read(responseBody, "$.data.accessToken");
+
+        // When & Then
+        assertThat(refreshTokenRepository.findByUser_Email(dto.email())).isPresent();
+        mockMvc.perform(delete("/api/auth/logout")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("성공적으로 로그아웃 되었습니다."));
+
+        assertThat(refreshTokenRepository.findByUser_Email(dto.email())).isEmpty();
+
     }
 }

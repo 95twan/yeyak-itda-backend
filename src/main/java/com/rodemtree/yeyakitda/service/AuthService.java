@@ -7,6 +7,7 @@ import com.rodemtree.yeyakitda.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -27,5 +28,10 @@ public class AuthService {
                         .build())
 
         );
+    }
+
+    @Transactional
+    public void deleteRefreshToken(String email) {
+        refreshTokenRepository.findByUser_Email(email).ifPresent(refreshTokenRepository::delete);
     }
 }
