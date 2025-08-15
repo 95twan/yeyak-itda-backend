@@ -69,15 +69,6 @@ public class JwtUtil {
         return getClaims(token).getExpiration().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
     }
 
-    public boolean isAccessToken(String token) {
-        try {
-            return "access".equals(getType(token));
-        } catch (Exception e) {
-            return false;
-        }
-
-    }
-
     public boolean isTokenValid(String token) {
         try {
             getClaims(token);

@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -218,6 +219,7 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("성공 - 유효한 토큰으로 로그아웃 요청 시, 200 OK와 함께 저장된 Refresh Token을 삭제한다.")
     void logoutTest() throws Exception {
         // Given
         LoginRequestDto dto = LoginRequestDto.of("test@test.com", "test1234!");
@@ -237,5 +239,27 @@ class AuthControllerTest {
 
         assertThat(refreshTokenRepository.findByUser_Email(dto.email())).isEmpty();
 
+    }
+
+    @Test
+    @DisplayName("성공 - 유효한 Refresh Token으로 요청 시, 새로운 Access Token과 Refresh Token을 재발급한다.")
+    void reissueTokenTest() throws Exception {
+        // Given
+        LoginRequestDto dto = LoginRequestDto.of("test@test.com", "test1234!");
+        String responseBody = mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto))
+        ).andReturn().getResponse().getContentAsString();
+        String refreshToken = JsonPath.read(responseBody, "$.data.refreshToken");
+
+        // When & Then
+        mockMvc.perform(post("/api/auth/reissue")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("refreshToken", refreshToken))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").isNotEmpty())
+                .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.data.refreshToken").isNotEmpty());
     }
 }
