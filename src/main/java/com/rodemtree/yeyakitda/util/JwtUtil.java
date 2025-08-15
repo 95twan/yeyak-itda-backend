@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
@@ -19,15 +20,22 @@ public class JwtUtil {
     private final SecretKey secretKey;
     private final long accessTokenExpiration;
     private final long refreshTokenExpiration;
+    private final Clock clock;
 
-    public JwtUtil(@Value("${jwt.secret}") String secret, @Value("${jwt.expiration.access}") long accessTokenExpirationexpiration, @Value("${jwt.expiration.refresh}") long refreshTokenExpiration) {
+    public JwtUtil(
+            @Value("${jwt.secret}") String secret,
+            @Value("${jwt.expiration.access}") long accessTokenExpirationexpiration,
+            @Value("${jwt.expiration.refresh}") long refreshTokenExpiration,
+            Clock clock
+    ) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.accessTokenExpiration = accessTokenExpirationexpiration;
         this.refreshTokenExpiration = refreshTokenExpiration;
+        this.clock = clock;
     }
 
     public String createAccessToken(JwtUserInfoDto userInfoDto) {
-        Date now = new Date();
+        Date now = Date.from(clock.instant());
         Date expirationDate = new Date(now.getTime() + accessTokenExpiration);
         return Jwts.builder()
                 .subject(userInfoDto.email())
@@ -40,7 +48,7 @@ public class JwtUtil {
     }
 
     public String createRefreshToken(JwtUserInfoDto userInfoDto) {
-        Date now = new Date();
+        Date now = Date.from(clock.instant());
         Date expirationDate = new Date(now.getTime() + refreshTokenExpiration);
         return Jwts.builder()
                 .subject(userInfoDto.email())

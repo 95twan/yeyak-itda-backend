@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,7 +21,7 @@ class JwtUtilTest {
     
     @BeforeEach
     void setUp() {
-        jwtUtil = new JwtUtil(SECRET, ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_EXPIRATION);
+        jwtUtil = new JwtUtil(SECRET, ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_EXPIRATION, Clock.systemDefaultZone());
     }
 
     @Test
@@ -101,7 +102,7 @@ class JwtUtilTest {
     @DisplayName("성공 - 유효하지 않은 토큰은 false를 리턴한다.")
     void inValidTokenTest() {
         // Given
-        jwtUtil = new JwtUtil(SECRET, -ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_EXPIRATION);
+        jwtUtil = new JwtUtil(SECRET, -ACCESS_TOKEN_EXPIRATION, REFRESH_TOKEN_EXPIRATION, Clock.systemDefaultZone());
         JwtUserInfoDto userInfoDto = createJwtUserInfoDto("test@test.com", UserRole.ROLE_USER);
         String token = jwtUtil.createAccessToken(userInfoDto);
 
