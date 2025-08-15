@@ -38,7 +38,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String accessToken = authorizationHeader.substring(BEARER_PREFIX.length());
 
         try {
-            if (jwtUtil.isAccessToken(accessToken)) {
+            if (jwtUtil.isTokenValid(accessToken) && "access".equals(jwtUtil.getType(accessToken))) {
                 String email = jwtUtil.getEmail(accessToken);
                 String role = jwtUtil.getRole(accessToken);
 

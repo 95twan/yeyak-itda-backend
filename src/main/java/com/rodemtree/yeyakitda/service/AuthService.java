@@ -1,9 +1,12 @@
 package com.rodemtree.yeyakitda.service;
 
+import com.rodemtree.yeyakitda.dto.JwtUserInfoDto;
+import com.rodemtree.yeyakitda.dto.response.LoginSuccessResponseDto;
 import com.rodemtree.yeyakitda.entity.RefreshTokenEntity;
 import com.rodemtree.yeyakitda.entity.UserEntity;
 import com.rodemtree.yeyakitda.repository.RefreshTokenRepository;
 import com.rodemtree.yeyakitda.repository.UserRepository;
+import com.rodemtree.yeyakitda.util.JwtUtil;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +19,7 @@ import java.time.LocalDateTime;
 public class AuthService {
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final JwtUtil jwtUtil;
 
     public void updateRefreshToken(String email, String refreshToken, LocalDateTime expireAt) {
         UserEntity userEntity = userRepository.findByEmail(email).orElseThrow(() -> new EntityNotFoundException("인증된 사용자를 찾을 수 없습니다."));
@@ -33,5 +37,26 @@ public class AuthService {
     @Transactional
     public void deleteRefreshToken(String email) {
         refreshTokenRepository.findByUser_Email(email).ifPresent(refreshTokenRepository::delete);
+    }
+
+
+    @Transactional
+    public LoginSuccessResponseDto reissueToken(String refreshToken) {
+        if (!jwtUtil.isTokenValid(refreshToken) || !"refresh".equals(jwtUtil.getType(refreshToken)))
+            throw new RuntimeException("유효하지 않은 토큰 입니다.");
+        RefreshTokenEntity refreshTokenEntity = refreshTokenRepository.findByToken(refreshToken).orElseThrow(
+                () -> new EntityNotFoundException("일치하는 refresh token을 찾을 수 없습니다.")
+        );
+
+        UserEntity userEntity = refreshTokenEntity.getUser();
+        JwtUserInfoDto userInfoDto = JwtUserInfoDto.of(userEntity.getEmail(), userEntity.getRole());
+
+        String newAccessToken = jwtUtil.createAccessToken(userInfoDto);
+        String newRefreshToken = jwtUtil.createRefreshToken(userInfoDto);
+        LocalDateTime newExpireAt = jwtUtil.getExpiration(newRefreshToken);
+
+        refreshTokenEntity.updateRefreshToken(newRefreshToken, newExpireAt);
+
+        return LoginSuccessResponseDto.of(newAccessToken, newRefreshToken);
     }
 }
