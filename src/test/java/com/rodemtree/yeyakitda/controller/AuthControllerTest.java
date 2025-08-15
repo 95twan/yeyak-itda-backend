@@ -17,15 +17,19 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -52,6 +56,9 @@ class AuthControllerTest {
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
 
+    @MockitoBean
+    private Clock clock;
+
 
     @BeforeEach
     void setUp() {
@@ -67,6 +74,8 @@ class AuthControllerTest {
         user.setDefaultRole();
 
         userRepository.save(user);
+
+        given(clock.instant()).willReturn(Instant.now());
     }
 
     @Test
@@ -245,6 +254,8 @@ class AuthControllerTest {
     @DisplayName("성공 - 유효한 Refresh Token으로 요청 시, 새로운 Access Token과 Refresh Token을 재발급한다.")
     void reissueTokenTest() throws Exception {
         // Given
+        Instant loginTime = Instant.now();
+        given(clock.instant()).willReturn(loginTime);
         LoginRequestDto dto = LoginRequestDto.of("test@test.com", "test1234!");
         String responseBody = mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -252,14 +263,20 @@ class AuthControllerTest {
         ).andReturn().getResponse().getContentAsString();
         String refreshToken = JsonPath.read(responseBody, "$.data.refreshToken");
 
+        given(clock.instant()).willReturn(loginTime.plusSeconds(10));
+
         // When & Then
-        mockMvc.perform(post("/api/auth/reissue")
+        String reissueResponseBody = mockMvc.perform(post("/api/auth/reissue")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("refreshToken", refreshToken))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").isNotEmpty())
                 .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.data.refreshToken").isNotEmpty());
+                .andExpect(jsonPath("$.data.refreshToken").isNotEmpty())
+                .andReturn().getResponse().getContentAsString();
+
+        String reissuedRefreshToken = JsonPath.read(reissueResponseBody, "$.data.refreshToken");
+        assertThat(reissuedRefreshToken).isNotEqualTo(refreshToken);
     }
 }
