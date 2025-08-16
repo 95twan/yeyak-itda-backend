@@ -45,6 +45,7 @@ public class AuthService {
         if (!jwtUtil.isTokenValid(refreshToken) || !"refresh".equals(jwtUtil.getType(refreshToken)))
             throw new RuntimeException("유효하지 않은 토큰 입니다.");
         RefreshTokenEntity refreshTokenEntity = refreshTokenRepository.findByToken(refreshToken).orElseThrow(
+                // Todo: 예외 처리 기능 넣을 때 수정 없는 토큰이면 유효하지 않은 토큰이 맞음
                 () -> new EntityNotFoundException("일치하는 refresh token을 찾을 수 없습니다.")
         );
 
