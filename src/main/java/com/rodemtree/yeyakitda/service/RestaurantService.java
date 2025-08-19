@@ -18,8 +18,8 @@ public class RestaurantService {
     private final RestaurantRepository restaurantRepository;
     private final RestuarantMapper restuarantMapper;
 
-    public Page<RestaurantDto> getRestaurantList(Set<String> categories, Pageable pageable) {
-        Page<RestaurantEntity> restaurantEntityPage = restaurantRepository.findByCategories(categories, pageable);
+    public Page<RestaurantDto> getRestaurantList(Set<String> categories, String keyword, Pageable pageable) {
+        Page<RestaurantEntity> restaurantEntityPage = restaurantRepository.findByCategoriesAndKeyword(categories, keyword, pageable);
         return restaurantEntityPage.map(restuarantMapper::restaurantEntityToRestaurantDto);
     }
 }

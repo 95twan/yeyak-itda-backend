@@ -70,23 +70,7 @@ class RestaurantRepositoryTest {
     }
 
     @Test
-    @DisplayName("성공 - category로 조회")
-    void findByCategoryInTest() {
-        // Given
-        UserEntity user = userRepository.save(createUser());
-        restaurantRepository.save(createRestaurant(user));
-        Set<String> categories = Set.of("한식", "양식");
-        Pageable pageable = PageRequest.of(0, 10, Sort.by("rating").descending());
-
-        // When
-        Page<RestaurantEntity> result = restaurantRepository.findByCategories(categories, pageable);
-
-        // Then
-        assertThat(result.getContent().size()).isEqualTo(1);
-    }
-
-    @Test
-    @DisplayName("성공 - category가 없으면 전체 조회")
+    @DisplayName("성공 - 검색조건이 없으면 전체 조회")
     void findAllTest() {
         // Given
         UserEntity user = userRepository.save(createUser());
@@ -94,21 +78,91 @@ class RestaurantRepositoryTest {
         Pageable pageable = PageRequest.of(0, 10, Sort.by("rating").descending());
 
         // When
-        Page<RestaurantEntity> result = restaurantRepository.findByCategories(null, pageable);
+        Page<RestaurantEntity> result = restaurantRepository.findByCategoriesAndKeyword(null, null, pageable);
 
         // Then
         assertThat(result.getContent().size()).isEqualTo(1);
     }
 
+    @Test
+    @DisplayName("성공 - category로 조회")
+    void findByCategoryTest() {
+        // Given
+        UserEntity user = userRepository.save(createUser());
+        restaurantRepository.save(createRestaurant(user, "한식,양식"));
+        restaurantRepository.save(createRestaurant(user, "양식"));
+        restaurantRepository.save(createRestaurant(user, "한식"));
+        restaurantRepository.save(createRestaurant(user, "중식"));
+        Set<String> categories = Set.of("한식", "양식");
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("rating").descending());
+
+        // When
+        Page<RestaurantEntity> result = restaurantRepository.findByCategoriesAndKeyword(categories, null, pageable);
+
+        // Then
+        assertThat(result.getContent().size()).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("성공 - keyword로 조회")
+    void findByKeywordTest() {
+        // Given
+        UserEntity user = userRepository.save(createUser());
+        restaurantRepository.save(createRestaurant(user, "테스트 식당", "서울 강남구", "상세1"));
+        restaurantRepository.save(createRestaurant(user, "강남 맛집", "서울 테스트구", "상세2"));
+        restaurantRepository.save(createRestaurant(user, "마포 주먹고기", "서울 마포구", "상세3"));
+        restaurantRepository.save(createRestaurant(user, "용산 김밥천국", "서울 용산구", "테스트1"));
+        String keyword = "테스트";
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("rating").descending());
+
+        // When
+        Page<RestaurantEntity> result = restaurantRepository.findByCategoriesAndKeyword(null, keyword, pageable);
+
+        // Then
+        assertThat(result.getContent().size()).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("성공 - keyword로 조회")
+    void findByCategoriesAndKeywordTest() {
+        // Given
+        UserEntity user = userRepository.save(createUser());
+        restaurantRepository.save(createRestaurant(user, "테스트 식당", "서울 강남구", "상세1", "한식,약식"));
+        restaurantRepository.save(createRestaurant(user, "강남 맛집", "서울 테스트구", "상세2", "한식"));
+        restaurantRepository.save(createRestaurant(user, "마포 주먹고기", "서울 마포구", "상세3", "양식"));
+        restaurantRepository.save(createRestaurant(user, "용산 김밥천국", "서울 용산구", "테스트1", "중식"));
+        String keyword = "테스트";
+        Set<String> categories = Set.of("한식", "양식");
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("rating").descending());
+
+        // When
+        Page<RestaurantEntity> result = restaurantRepository.findByCategoriesAndKeyword(categories, keyword, pageable);
+
+        // Then
+        assertThat(result.getContent().size()).isEqualTo(2);
+    }
+
 
     private RestaurantEntity createRestaurant(UserEntity user) {
+        return createRestaurant(user, "test-category");
+    }
+
+    private RestaurantEntity createRestaurant(UserEntity user, String category) {
+        return createRestaurant(user, "test-name", "test-address", "test-description", category);
+    }
+
+    private RestaurantEntity createRestaurant(UserEntity user, String name, String address, String description) {
+        return createRestaurant(user, name, address, description, "test-category");
+    }
+
+    private RestaurantEntity createRestaurant(UserEntity user, String name, String address, String description, String category) {
         return RestaurantEntity.builder()
-                .name("test-name")
+                .name(name)
                 .user(user)
-                .description("test-description")
+                .description(description)
                 .phoneNumber("010-1234-1234")
-                .address("address")
-                .category("한식,양식,중식")
+                .address(address)
+                .category(category)
                 .build();
     }
 

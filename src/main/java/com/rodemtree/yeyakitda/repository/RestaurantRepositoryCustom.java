@@ -7,5 +7,5 @@ import org.springframework.data.domain.Pageable;
 import java.util.Set;
 
 public interface RestaurantRepositoryCustom {
-    Page<RestaurantEntity> findByCategories(Set<String> categories, Pageable pageable);
+    Page<RestaurantEntity> findByCategoriesAndKeyword(Set<String> categories, String Keyword, Pageable pageable);
 }
