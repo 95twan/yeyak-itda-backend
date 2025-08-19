@@ -27,6 +27,7 @@ public class TestSecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/users").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/restaurants").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

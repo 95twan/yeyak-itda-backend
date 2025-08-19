@@ -1,11 +1,8 @@
 package com.rodemtree.yeyakitda.service;
 
-import com.rodemtree.yeyakitda.dto.JwtUserInfoDto;
-import com.rodemtree.yeyakitda.dto.request.LoginRequestDto;
 import com.rodemtree.yeyakitda.dto.response.LoginSuccessResponseDto;
 import com.rodemtree.yeyakitda.entity.RefreshTokenEntity;
 import com.rodemtree.yeyakitda.entity.UserEntity;
-import com.rodemtree.yeyakitda.entity.UserRole;
 import com.rodemtree.yeyakitda.repository.RefreshTokenRepository;
 import com.rodemtree.yeyakitda.repository.UserRepository;
 import com.rodemtree.yeyakitda.util.JwtUtil;
