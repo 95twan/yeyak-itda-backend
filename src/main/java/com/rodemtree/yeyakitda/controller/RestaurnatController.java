@@ -28,9 +28,10 @@ public class RestaurnatController {
     @GetMapping
     public ResponseEntity<BaseResponseDto> getRestaurnatList(
             @RequestParam(required = false, value = "category") Set<String> categories,
+            @RequestParam(required = false, value = "keyword") String keyword,
             @PageableDefault(size = 12, page = 0, sort = {"rating"}, direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<RestaurantDto> restaurantList = restaurantService.getRestaurantList(categories, pageable);
+        Page<RestaurantDto> restaurantList = restaurantService.getRestaurantList(categories, keyword, pageable);
         PageInfoDto pageInfoDto = PageInfoDto.of(restaurantList);
         BaseResponseDto responseDto = BaseResponseDto.of(HttpStatus.OK.value(), "성공적으로 식당 목록을 조회했습니다.", restaurantList.getContent(), pageInfoDto);
 

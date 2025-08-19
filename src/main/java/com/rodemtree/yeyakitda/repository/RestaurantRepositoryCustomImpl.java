@@ -18,20 +18,27 @@ public class RestaurantRepositoryCustomImpl implements RestaurantRepositoryCusto
     private final JPAQueryFactory jpaQueryFactory;
 
     @Override
-    public Page<RestaurantEntity> findByCategories(Set<String> categories, Pageable pageable) {
+    public Page<RestaurantEntity> findByCategoriesAndKeyword(Set<String> categories, String keyword, Pageable pageable) {
         QRestaurantEntity restaurant = QRestaurantEntity.restaurantEntity;
 
-        BooleanBuilder builder = new BooleanBuilder();
+        BooleanBuilder categoryBuilder = new BooleanBuilder();
+        BooleanBuilder keywordBuilder = new BooleanBuilder();
 
         if (categories != null && !categories.isEmpty()) {
             for (String category : categories) {
-                builder.or(restaurant.category.containsIgnoreCase(category));
+                categoryBuilder.or(restaurant.category.containsIgnoreCase(category));
             }
+        }
+
+        if (keyword != null && !keyword.isEmpty()) {
+            keywordBuilder.or(restaurant.name.containsIgnoreCase(keyword));
+            keywordBuilder.or(restaurant.address.containsIgnoreCase(keyword));
+            keywordBuilder.or(restaurant.description.containsIgnoreCase(keyword));
         }
 
         List<RestaurantEntity> content = jpaQueryFactory
                 .selectFrom(restaurant)
-                .where(builder)
+                .where(categoryBuilder.and(keywordBuilder))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
@@ -39,7 +46,7 @@ public class RestaurantRepositoryCustomImpl implements RestaurantRepositoryCusto
         Long count = jpaQueryFactory
                 .select(restaurant.count())
                 .from(restaurant)
-                .where(builder)
+                .where(categoryBuilder.and(keywordBuilder))
                 .fetchOne();
 
         long total = count == null ? 0 : count;
