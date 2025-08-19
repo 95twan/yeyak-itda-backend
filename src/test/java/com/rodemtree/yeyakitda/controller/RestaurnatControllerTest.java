@@ -18,9 +18,10 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -39,9 +40,9 @@ class RestaurnatControllerTest {
 
     @Test
     @DisplayName("성공 - 식당 목록을 요청하면 기본 페이징(0페이지, 12개)된 식당 목록을 반환한다.")
-    void getRestaurantListDefaultPaging() throws Exception {
+    void getRestaurantListWithDefaultPaging() throws Exception {
         // Given
-        given(restaurantService.getRestaurantList(any(Pageable.class))).willReturn(new PageImpl<>(List.of(), PageRequest.of(0, 12), 0));
+        given(restaurantService.getRestaurantList(eq(null), any(Pageable.class))).willReturn(new PageImpl<>(List.of(), PageRequest.of(0, 12), 0));
 
         // When & Then
         mockMvc.perform(get("/api/restaurants"))
@@ -51,17 +52,17 @@ class RestaurnatControllerTest {
                 .andExpect(jsonPath("$.pageInfo.page").value(0))
                 .andExpect(jsonPath("$.pageInfo.size").value(12));
 
-        then(restaurantService).should().getRestaurantList(any(Pageable.class));
+        then(restaurantService).should().getRestaurantList(eq(null), any(Pageable.class));
     }
 
     @Test
-    @DisplayName("성공 - 페이지 정보와 식당 목록을 요청하면 페이징된 식당 목록을 반환한다.")
+    @DisplayName("성공 - 페이지 정보로 식당 목록을 요청하면 페이징된 식당 목록을 반환한다.")
     void getRestaurantListWithPaging() throws Exception {
         // Given
         int page = 0;
         int size = 8;
         Pageable pageable = PageRequest.of(page, size);
-        given(restaurantService.getRestaurantList(any(Pageable.class))).willReturn(new PageImpl<>(List.of(), pageable, 0));
+        given(restaurantService.getRestaurantList(eq(null), any(Pageable.class))).willReturn(new PageImpl<>(List.of(), pageable, 0));
 
         // When & Then
         mockMvc.perform(get("/api/restaurants")
@@ -71,14 +72,14 @@ class RestaurnatControllerTest {
                 .andExpect(jsonPath("$.pageInfo.page").value(0))
                 .andExpect(jsonPath("$.pageInfo.size").value(8));
 
-        then(restaurantService).should().getRestaurantList(any(Pageable.class));
+        then(restaurantService).should().getRestaurantList(eq(null), any(Pageable.class));
     }
 
     @Test
-    @DisplayName("성공 - 정렬 정보와 식당 목록을 요청하면 정렬된 식당 목록을 반환한다.")
+    @DisplayName("성공 - 정렬 정보로 식당 목록을 요청하면 정렬된 식당 목록을 반환한다.")
     void getRestaurantListWithSorting() throws Exception {
         // Given
-        given(restaurantService.getRestaurantList(any(Pageable.class))).willReturn(Page.empty());
+        given(restaurantService.getRestaurantList(eq(null), any(Pageable.class))).willReturn(Page.empty());
 
         // When & Then
         mockMvc.perform(get("/api/restaurants")
@@ -86,7 +87,7 @@ class RestaurnatControllerTest {
                 .andExpect(status().isOk());
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        then(restaurantService).should().getRestaurantList(pageableCaptor.capture());
+        then(restaurantService).should().getRestaurantList(eq(null), pageableCaptor.capture());
         Pageable pageable = pageableCaptor.getValue();
         assertThat(pageable.getSort()).isEqualTo(Sort.by(Sort.Direction.ASC, "name"));
     }
@@ -97,11 +98,31 @@ class RestaurnatControllerTest {
     void getRestaurantListWithInvalidSortProperty() throws Exception {
         // Given
         String invalidSortParam = "invalidProperty";
-        given(restaurantService.getRestaurantList(any(Pageable.class))).willThrow(new PropertyReferenceException(invalidSortParam, TypeInformation.of(RestaurantEntity.class), Collections.emptyList()));
+        given(restaurantService.getRestaurantList(eq(null), any(Pageable.class))).willThrow(new PropertyReferenceException(invalidSortParam, TypeInformation.of(RestaurantEntity.class), Collections.emptyList()));
 
         // When & Then
         mockMvc.perform(get("/api/restaurants")
                         .param("sort", invalidSortParam+",asc"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("성공 - 카테고리로 식당 목록을 요청하면 해당 카테고리의 식당 목록을 반환한다.")
+    void getRestaurantListWithCategories() throws Exception {
+        // Given
+        Set<String> expectedCategories = Set.of("한식", "중식");
+        given(restaurantService.getRestaurantList(anySet(), any(Pageable.class))).willReturn(Page.empty());
+
+        // When & Then
+        mockMvc.perform(get("/api/restaurants")
+                        .param("category", "한식,중식"))
+                .andExpect(status().isOk());
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Set<String>> captor = ArgumentCaptor.forClass(Set.class);
+        then(restaurantService).should().getRestaurantList(captor.capture(), any(Pageable.class));
+
+        Set<String> categories = captor.getValue();
+        assertThat(categories).isEqualTo(expectedCategories);
     }
 }
