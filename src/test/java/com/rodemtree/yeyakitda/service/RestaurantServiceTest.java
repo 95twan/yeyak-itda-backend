@@ -1,6 +1,7 @@
 package com.rodemtree.yeyakitda.service;
 
 import com.rodemtree.yeyakitda.dto.RestaurantDto;
+import com.rodemtree.yeyakitda.dto.request.RestaurantSearchConditionDto;
 import com.rodemtree.yeyakitda.entity.RestaurantEntity;
 import com.rodemtree.yeyakitda.mapper.RestuarantMapper;
 import com.rodemtree.yeyakitda.repository.RestaurantRepository;
@@ -24,7 +25,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.mock;
 
 @ExtendWith(MockitoExtension.class)
 class RestaurantServiceTest {
@@ -42,22 +42,24 @@ class RestaurantServiceTest {
     @DisplayName("성공 - 페이징 정보를 받아 식당 목록을 조회하면 식당 DTO 페이지를 반환한다.")
     void getRestaurantListTest() {
         // Given
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("rating").descending());
+        RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().build();
+
         List<RestaurantEntity> restaurantEntityList = IntStream.range(1, 11)
                 .mapToObj(i -> createRestaurant("restaurant" + i))
                 .toList();
-        Pageable pageable = PageRequest.of(0, 10, Sort.by("rating").descending());
         Page<RestaurantEntity> restaurantEntityPage = new PageImpl<>(restaurantEntityList, pageable, 10);
-        given(restaurantRepository.findByCategoriesAndKeyword(null, null, pageable)).willReturn(restaurantEntityPage);
+        given(restaurantRepository.search(condition, pageable)).willReturn(restaurantEntityPage);
         given(restuarantMapper.restaurantEntityToRestaurantDto(any(RestaurantEntity.class))).will(invocation -> {
             RestaurantEntity restaurantEntity = invocation.getArgument(0);
             return createRestaurantDto(restaurantEntity.getName());
         });
 
         // When
-        Page<RestaurantDto> result = restaurantService.getRestaurantList(null, null, pageable);
+        Page<RestaurantDto> result = restaurantService.getRestaurantList(condition, pageable);
 
         // Then
-        then(restaurantRepository).should().findByCategoriesAndKeyword(null, null, pageable);
+        then(restaurantRepository).should().search(condition, pageable);
 
         assertThat(result.getTotalElements()).isEqualTo(10);
         assertThat(result.getContent().get(0).name()).isEqualTo("restaurant1");
@@ -69,14 +71,16 @@ class RestaurantServiceTest {
     void getRestaurantListWithInvalidSortTest() {
         // Given
         Pageable pageable = PageRequest.of(0, 10, Sort.by("invalid").descending());
-        given(restaurantRepository.findByCategoriesAndKeyword(null, null, pageable))
+        RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().build();
+
+        given(restaurantRepository.search(condition, pageable))
                 .willThrow(new PropertyReferenceException("invalid", TypeInformation.of(RestaurantEntity.class), Collections.emptyList()));
 
         // When & Then
-        assertThatThrownBy(() -> restaurantService.getRestaurantList(null, null, pageable))
+        assertThatThrownBy(() -> restaurantService.getRestaurantList(condition, pageable))
                 .isInstanceOf(PropertyReferenceException.class);
 
-        then(restaurantRepository).should().findByCategoriesAndKeyword(null, null, pageable);
+        then(restaurantRepository).should().search(condition, pageable);
     }
 
     @Test
@@ -84,22 +88,24 @@ class RestaurantServiceTest {
     void getRestaurantListWithCategoryTest() {
         // Given
         Set<String> categories = Set.of("한식");
+        RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().categories(categories).build();
         Pageable pageable = PageRequest.of(0, 10, Sort.by("rating").descending());
+
         Page<RestaurantEntity> restaurantEntityPage = new PageImpl<>(List.of(createRestaurant("테스트 식당", "한식,중식")), pageable, 1);
-        given(restaurantRepository.findByCategoriesAndKeyword(categories, null, pageable)).willReturn(restaurantEntityPage);
+        given(restaurantRepository.search(condition, pageable)).willReturn(restaurantEntityPage);
         given(restuarantMapper.restaurantEntityToRestaurantDto(any(RestaurantEntity.class))).will(invocation -> {
             RestaurantEntity restaurantEntity = invocation.getArgument(0);
             return createRestaurantDto(restaurantEntity.getName(), restaurantEntity.getCategory());
         });
 
         // When
-        Page<RestaurantDto> result = restaurantService.getRestaurantList(categories, null, pageable);
+        Page<RestaurantDto> result = restaurantService.getRestaurantList(condition, pageable);
 
         // Then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).category()).contains(categories);
 
-        then(restaurantRepository).should().findByCategoriesAndKeyword(categories, null, pageable);
+        then(restaurantRepository).should().search(condition, pageable);
     }
 
     @Test
@@ -107,14 +113,15 @@ class RestaurantServiceTest {
     void getRestaurantListWithKeywordTest() {
         // Given
         String keyword = "테스트";
+        RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().keyword(keyword).build();
         Pageable pageable = PageRequest.of(0, 10, Sort.by("rating").descending());
-        given(restaurantRepository.findByCategoriesAndKeyword(null, keyword, pageable)).willReturn(Page.empty());
+        given(restaurantRepository.search(condition, pageable)).willReturn(Page.empty());
 
         // When
-        Page<RestaurantDto> result = restaurantService.getRestaurantList(null, keyword, pageable);
+        Page<RestaurantDto> result = restaurantService.getRestaurantList(condition, pageable);
 
         // Then
-        then(restaurantRepository).should().findByCategoriesAndKeyword(null, keyword, pageable);
+        then(restaurantRepository).should().search(condition, pageable);
     }
 
     @Test
@@ -123,14 +130,15 @@ class RestaurantServiceTest {
         // Given
         Set<String> categories = Set.of("한식");
         String keyword = "테스트";
+        RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().categories(categories).keyword(keyword).build();
         Pageable pageable = PageRequest.of(0, 10, Sort.by("rating").descending());
-        given(restaurantRepository.findByCategoriesAndKeyword(categories, keyword, pageable)).willReturn(Page.empty());
+        given(restaurantRepository.search(condition, pageable)).willReturn(Page.empty());
 
         // When
-        Page<RestaurantDto> result = restaurantService.getRestaurantList(categories, keyword, pageable);
+        Page<RestaurantDto> result = restaurantService.getRestaurantList(condition, pageable);
 
         // Then
-        then(restaurantRepository).should().findByCategoriesAndKeyword(categories, keyword, pageable);
+        then(restaurantRepository).should().search(condition, pageable);
     }
 
 
