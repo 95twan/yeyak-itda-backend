@@ -22,9 +22,6 @@ public class RestaurantEntity extends BaseEntity {
     @Column(name = "name", length = 32, nullable = false)
     private String name;
 
-    @Column(name = "thumbnail_image_url", length = 256)
-    private String thumbnailImageUrl;
-
     @ManyToOne
     @JoinColumn(name = "thumbnail_image_id")
     private RestaurantImageEntity restaurantImage;
@@ -59,5 +56,9 @@ public class RestaurantEntity extends BaseEntity {
         this.phoneNumber = phoneNumber;
         this.address = address;
         this.category = category;
+    }
+
+    public void updateRestaurantThumbnailImage(RestaurantImageEntity restaurantImage) {
+        this.restaurantImage = restaurantImage;
     }
 }
