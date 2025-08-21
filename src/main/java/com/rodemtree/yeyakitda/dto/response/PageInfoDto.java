@@ -1,4 +1,4 @@
-package com.rodemtree.yeyakitda.dto;
+package com.rodemtree.yeyakitda.dto.response;
 
 import org.springframework.data.domain.Page;
 
@@ -8,7 +8,7 @@ public record PageInfoDto(
         Long totalElements,
         Integer totalPages
 ) {
-    public static PageInfoDto of(Page<RestaurantDto> pageable) {
+    public static PageInfoDto of(Page<?> pageable) {
         return new PageInfoDto(pageable.getNumber(), pageable.getSize(), pageable.getTotalElements(), pageable.getTotalPages());
     }
 }

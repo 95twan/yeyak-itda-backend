@@ -1,7 +1,7 @@
 package com.rodemtree.yeyakitda.service;
 
 import com.rodemtree.yeyakitda.dto.JwtUserInfoDto;
-import com.rodemtree.yeyakitda.dto.response.LoginSuccessResponseDto;
+import com.rodemtree.yeyakitda.dto.LoginSuccessDto;
 import com.rodemtree.yeyakitda.entity.RefreshTokenEntity;
 import com.rodemtree.yeyakitda.entity.UserEntity;
 import com.rodemtree.yeyakitda.repository.RefreshTokenRepository;
@@ -41,7 +41,7 @@ public class AuthService {
 
 
     @Transactional
-    public LoginSuccessResponseDto reissueToken(String refreshToken) {
+    public LoginSuccessDto reissueToken(String refreshToken) {
         if (!jwtUtil.isTokenValid(refreshToken) || !"refresh".equals(jwtUtil.getType(refreshToken)))
             throw new RuntimeException("유효하지 않은 토큰 입니다.");
         RefreshTokenEntity refreshTokenEntity = refreshTokenRepository.findByToken(refreshToken).orElseThrow(
@@ -58,6 +58,6 @@ public class AuthService {
 
         refreshTokenEntity.updateRefreshToken(newRefreshToken, newExpireAt);
 
-        return LoginSuccessResponseDto.of(newAccessToken, newRefreshToken);
+        return LoginSuccessDto.of(newAccessToken, newRefreshToken);
     }
 }
