@@ -3,8 +3,8 @@ package com.rodemtree.yeyakitda.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rodemtree.yeyakitda.dto.JwtUserInfoDto;
 import com.rodemtree.yeyakitda.dto.request.LoginRequestDto;
-import com.rodemtree.yeyakitda.dto.response.BaseResponseDto;
-import com.rodemtree.yeyakitda.dto.response.LoginSuccessResponseDto;
+import com.rodemtree.yeyakitda.dto.response.ApiResponseDto;
+import com.rodemtree.yeyakitda.dto.LoginSuccessDto;
 import com.rodemtree.yeyakitda.entity.UserRole;
 import com.rodemtree.yeyakitda.service.AuthService;
 import com.rodemtree.yeyakitda.util.JwtUtil;
@@ -73,8 +73,8 @@ public class LoginAuthenticationFilter extends UsernamePasswordAuthenticationFil
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
 
-        LoginSuccessResponseDto loginSuccessResponseDto = LoginSuccessResponseDto.of(accessToken, refreshToken);
-        BaseResponseDto responseDto = BaseResponseDto.of(HttpStatus.OK.value(), "로그인 성공", loginSuccessResponseDto);
+        LoginSuccessDto loginSuccessDto = LoginSuccessDto.of(accessToken, refreshToken);
+        ApiResponseDto<?> responseDto = ApiResponseDto.of(HttpStatus.OK.value(), "로그인 성공", loginSuccessDto);
         response.getWriter().write(objectMapper.writeValueAsString(responseDto));
     }
 
@@ -84,7 +84,7 @@ public class LoginAuthenticationFilter extends UsernamePasswordAuthenticationFil
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
 
-        BaseResponseDto responseDto = BaseResponseDto.of(HttpStatus.UNAUTHORIZED.value(), "이메일 또는 비밀번호가 일치하지 않습니다.");
+        ApiResponseDto<?> responseDto = ApiResponseDto.of(HttpStatus.UNAUTHORIZED.value(), "이메일 또는 비밀번호가 일치하지 않습니다.");
         response.getWriter().write(objectMapper.writeValueAsString(responseDto));
     }
 }

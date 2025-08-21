@@ -1,6 +1,6 @@
 package com.rodemtree.yeyakitda.service;
 
-import com.rodemtree.yeyakitda.dto.response.LoginSuccessResponseDto;
+import com.rodemtree.yeyakitda.dto.LoginSuccessDto;
 import com.rodemtree.yeyakitda.entity.RefreshTokenEntity;
 import com.rodemtree.yeyakitda.entity.UserEntity;
 import com.rodemtree.yeyakitda.repository.RefreshTokenRepository;
@@ -119,11 +119,11 @@ class AuthServiceTest {
         given(jwtUtil.getExpiration(any())).willReturn(newExpireAt);
 
         // When
-        LoginSuccessResponseDto loginSuccessResponseDto = authService.reissueToken(refreshToken);
+        LoginSuccessDto loginSuccessDto = authService.reissueToken(refreshToken);
 
         // Then
-        assertThat(loginSuccessResponseDto.accessToken()).isEqualTo(newAccessToken);
-        assertThat(loginSuccessResponseDto.refreshToken()).isEqualTo(newRefreshToken);
+        assertThat(loginSuccessDto.accessToken()).isEqualTo(newAccessToken);
+        assertThat(loginSuccessDto.refreshToken()).isEqualTo(newRefreshToken);
 
         then(refreshTokenEntity).should().updateRefreshToken(eq(newRefreshToken), any(LocalDateTime.class));
     }

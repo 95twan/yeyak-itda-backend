@@ -49,10 +49,10 @@ class RestaurnatControllerTest {
         // When & Then
         mockMvc.perform(get("/api/restaurants"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").isArray())
-                .andExpect(jsonPath("$.pageInfo").exists())
-                .andExpect(jsonPath("$.pageInfo.page").value(0))
-                .andExpect(jsonPath("$.pageInfo.size").value(12));
+                .andExpect(jsonPath("$.data.content").isArray())
+                .andExpect(jsonPath("$.data.pageInfo").exists())
+                .andExpect(jsonPath("$.data.pageInfo.page").value(0))
+                .andExpect(jsonPath("$.data.pageInfo.size").value(12));
 
         then(restaurantService).should().getRestaurantList(eq(condition), any(Pageable.class));
     }
@@ -72,8 +72,8 @@ class RestaurnatControllerTest {
                         .param("page", page + "")
                         .param("size", size + ""))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.pageInfo.page").value(0))
-                .andExpect(jsonPath("$.pageInfo.size").value(8));
+                .andExpect(jsonPath("$.data.pageInfo.page").value(0))
+                .andExpect(jsonPath("$.data.pageInfo.size").value(8));
 
         then(restaurantService).should().getRestaurantList(eq(condition), any(Pageable.class));
     }

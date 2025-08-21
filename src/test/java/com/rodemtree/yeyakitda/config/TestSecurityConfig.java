@@ -1,7 +1,7 @@
 package com.rodemtree.yeyakitda.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rodemtree.yeyakitda.dto.response.BaseResponseDto;
+import com.rodemtree.yeyakitda.dto.response.ApiResponseDto;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;
@@ -42,7 +42,7 @@ public class TestSecurityConfig {
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             response.setCharacterEncoding("UTF-8");
 
-            BaseResponseDto responseDto = BaseResponseDto.of(HttpStatus.UNAUTHORIZED.value(), "인증이 필요한 서비스입니다.");
+            ApiResponseDto<?> responseDto = ApiResponseDto.of(HttpStatus.UNAUTHORIZED.value(), "인증이 필요한 서비스입니다.");
 
             response.getWriter().write(objectMapper.writeValueAsString(responseDto));
         };
