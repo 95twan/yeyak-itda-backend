@@ -1,6 +1,7 @@
 package com.rodemtree.yeyakitda.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -19,4 +20,13 @@ public class RestaurantImageEntity extends BaseEntity {
 
     @Column(name = "image_url", length = 256, nullable = false)
     private String imageUrl;
+
+    private RestaurantImageEntity(RestaurantEntity restaurant, String imageUrl) {
+        this.restaurant = restaurant;
+        this.imageUrl = imageUrl;
+    }
+
+    public static RestaurantImageEntity of(RestaurantEntity restaurant, String imageUrl) {
+        return new RestaurantImageEntity(restaurant, imageUrl);
+    }
 }
