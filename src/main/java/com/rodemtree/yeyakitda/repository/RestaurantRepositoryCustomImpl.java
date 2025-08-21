@@ -2,6 +2,7 @@ package com.rodemtree.yeyakitda.repository;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.rodemtree.yeyakitda.dto.request.RestaurantSearchConditionDto;
 import com.rodemtree.yeyakitda.entity.QRestaurantEntity;
 import com.rodemtree.yeyakitda.entity.RestaurantEntity;
 import lombok.RequiredArgsConstructor;
@@ -18,27 +19,33 @@ public class RestaurantRepositoryCustomImpl implements RestaurantRepositoryCusto
     private final JPAQueryFactory jpaQueryFactory;
 
     @Override
-    public Page<RestaurantEntity> findByCategoriesAndKeyword(Set<String> categories, String keyword, Pageable pageable) {
+    public Page<RestaurantEntity> search(RestaurantSearchConditionDto condition, Pageable pageable) {
         QRestaurantEntity restaurant = QRestaurantEntity.restaurantEntity;
 
-        BooleanBuilder categoryBuilder = new BooleanBuilder();
-        BooleanBuilder keywordBuilder = new BooleanBuilder();
+        BooleanBuilder builder = new BooleanBuilder();
+
+        Set<String> categories = condition.categories();
 
         if (categories != null && !categories.isEmpty()) {
+            BooleanBuilder categoryBuilder = new BooleanBuilder();
             for (String category : categories) {
                 categoryBuilder.or(restaurant.category.containsIgnoreCase(category));
             }
+            builder.and(categoryBuilder);
         }
 
-        if (keyword != null && !keyword.isEmpty()) {
+        String keyword = condition.keyword();
+        if (keyword != null && !keyword.isBlank()) {
+            BooleanBuilder keywordBuilder = new BooleanBuilder();
             keywordBuilder.or(restaurant.name.containsIgnoreCase(keyword));
             keywordBuilder.or(restaurant.address.containsIgnoreCase(keyword));
             keywordBuilder.or(restaurant.description.containsIgnoreCase(keyword));
+            builder.and(keywordBuilder);
         }
 
         List<RestaurantEntity> content = jpaQueryFactory
                 .selectFrom(restaurant)
-                .where(categoryBuilder.and(keywordBuilder))
+                .where(builder)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
@@ -46,7 +53,7 @@ public class RestaurantRepositoryCustomImpl implements RestaurantRepositoryCusto
         Long count = jpaQueryFactory
                 .select(restaurant.count())
                 .from(restaurant)
-                .where(categoryBuilder.and(keywordBuilder))
+                .where(builder)
                 .fetchOne();
 
         long total = count == null ? 0 : count;

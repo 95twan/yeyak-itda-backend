@@ -1,6 +1,7 @@
 package com.rodemtree.yeyakitda.repository;
 
 import com.rodemtree.yeyakitda.config.JpaConfig;
+import com.rodemtree.yeyakitda.dto.request.RestaurantSearchConditionDto;
 import com.rodemtree.yeyakitda.entity.RestaurantEntity;
 import com.rodemtree.yeyakitda.entity.UserEntity;
 import org.junit.jupiter.api.BeforeEach;
@@ -75,10 +76,12 @@ class RestaurantRepositoryTest {
         // Given
         UserEntity user = userRepository.save(createUser());
         restaurantRepository.save(createRestaurant(user));
+
+        RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().build();
         Pageable pageable = PageRequest.of(0, 10, Sort.by("rating").descending());
 
         // When
-        Page<RestaurantEntity> result = restaurantRepository.findByCategoriesAndKeyword(null, null, pageable);
+        Page<RestaurantEntity> result = restaurantRepository.search(condition, pageable);
 
         // Then
         assertThat(result.getContent().size()).isEqualTo(1);
@@ -93,11 +96,13 @@ class RestaurantRepositoryTest {
         restaurantRepository.save(createRestaurant(user, "양식"));
         restaurantRepository.save(createRestaurant(user, "한식"));
         restaurantRepository.save(createRestaurant(user, "중식"));
+
         Set<String> categories = Set.of("한식", "양식");
+        RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().categories(categories).build();
         Pageable pageable = PageRequest.of(0, 10, Sort.by("rating").descending());
 
         // When
-        Page<RestaurantEntity> result = restaurantRepository.findByCategoriesAndKeyword(categories, null, pageable);
+        Page<RestaurantEntity> result = restaurantRepository.search(condition, pageable);
 
         // Then
         assertThat(result.getContent().size()).isEqualTo(3);
@@ -112,18 +117,20 @@ class RestaurantRepositoryTest {
         restaurantRepository.save(createRestaurant(user, "강남 맛집", "서울 테스트구", "상세2"));
         restaurantRepository.save(createRestaurant(user, "마포 주먹고기", "서울 마포구", "상세3"));
         restaurantRepository.save(createRestaurant(user, "용산 김밥천국", "서울 용산구", "테스트1"));
+
         String keyword = "테스트";
+        RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().keyword(keyword).build();
         Pageable pageable = PageRequest.of(0, 10, Sort.by("rating").descending());
 
         // When
-        Page<RestaurantEntity> result = restaurantRepository.findByCategoriesAndKeyword(null, keyword, pageable);
+        Page<RestaurantEntity> result = restaurantRepository.search(condition, pageable);
 
         // Then
         assertThat(result.getContent().size()).isEqualTo(3);
     }
 
     @Test
-    @DisplayName("성공 - keyword로 조회")
+    @DisplayName("성공 - 카테고리와 keyword로 조회")
     void findByCategoriesAndKeywordTest() {
         // Given
         UserEntity user = userRepository.save(createUser());
@@ -131,12 +138,14 @@ class RestaurantRepositoryTest {
         restaurantRepository.save(createRestaurant(user, "강남 맛집", "서울 테스트구", "상세2", "한식"));
         restaurantRepository.save(createRestaurant(user, "마포 주먹고기", "서울 마포구", "상세3", "양식"));
         restaurantRepository.save(createRestaurant(user, "용산 김밥천국", "서울 용산구", "테스트1", "중식"));
+
         String keyword = "테스트";
         Set<String> categories = Set.of("한식", "양식");
+        RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().keyword(keyword).categories(categories).build();
         Pageable pageable = PageRequest.of(0, 10, Sort.by("rating").descending());
 
         // When
-        Page<RestaurantEntity> result = restaurantRepository.findByCategoriesAndKeyword(categories, keyword, pageable);
+        Page<RestaurantEntity> result = restaurantRepository.search(condition, pageable);
 
         // Then
         assertThat(result.getContent().size()).isEqualTo(2);
