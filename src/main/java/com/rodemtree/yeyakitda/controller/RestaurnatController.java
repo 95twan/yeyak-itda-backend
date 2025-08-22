@@ -26,7 +26,7 @@ public class RestaurnatController {
             @ModelAttribute RestaurantSearchConditionDto condition,
             @PageableDefault(size = 12, page = 0, sort = {"rating"}, direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<RestaurantDto> restaurantList = restaurantService.getRestaurantList(condition, pageable);
+        Page<RestaurantDto> restaurantList = restaurantService.getRestaurants(condition, pageable);
         PagedResponseDto<RestaurantDto> pagedResponseDto = PagedResponseDto.of(restaurantList);
         ApiResponseDto<PagedResponseDto<RestaurantDto>> responseDto = ApiResponseDto.of(HttpStatus.OK.value(), "성공적으로 식당 목록을 조회했습니다.", pagedResponseDto);
 

@@ -44,7 +44,7 @@ class RestaurnatControllerTest {
     void getRestaurantListWithDefaultPaging() throws Exception {
         // Given
         RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().build();
-        given(restaurantService.getRestaurantList(eq(condition), any(Pageable.class))).willReturn(new PageImpl<>(List.of(), PageRequest.of(0, 12), 0));
+        given(restaurantService.getRestaurants(eq(condition), any(Pageable.class))).willReturn(new PageImpl<>(List.of(), PageRequest.of(0, 12), 0));
 
         // When & Then
         mockMvc.perform(get("/api/restaurants"))
@@ -54,7 +54,7 @@ class RestaurnatControllerTest {
                 .andExpect(jsonPath("$.data.pageInfo.page").value(0))
                 .andExpect(jsonPath("$.data.pageInfo.size").value(12));
 
-        then(restaurantService).should().getRestaurantList(eq(condition), any(Pageable.class));
+        then(restaurantService).should().getRestaurants(eq(condition), any(Pageable.class));
     }
 
     @Test
@@ -65,7 +65,7 @@ class RestaurnatControllerTest {
         int size = 8;
         Pageable pageable = PageRequest.of(page, size);
         RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().build();
-        given(restaurantService.getRestaurantList(eq(condition), any(Pageable.class))).willReturn(new PageImpl<>(List.of(), pageable, 0));
+        given(restaurantService.getRestaurants(eq(condition), any(Pageable.class))).willReturn(new PageImpl<>(List.of(), pageable, 0));
 
         // When & Then
         mockMvc.perform(get("/api/restaurants")
@@ -75,7 +75,7 @@ class RestaurnatControllerTest {
                 .andExpect(jsonPath("$.data.pageInfo.page").value(0))
                 .andExpect(jsonPath("$.data.pageInfo.size").value(8));
 
-        then(restaurantService).should().getRestaurantList(eq(condition), any(Pageable.class));
+        then(restaurantService).should().getRestaurants(eq(condition), any(Pageable.class));
     }
 
     @Test
@@ -83,7 +83,7 @@ class RestaurnatControllerTest {
     void getRestaurantListWithSorting() throws Exception {
         // Given
         RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().build();
-        given(restaurantService.getRestaurantList(eq(condition), any(Pageable.class))).willReturn(Page.empty());
+        given(restaurantService.getRestaurants(eq(condition), any(Pageable.class))).willReturn(Page.empty());
 
         // When & Then
         mockMvc.perform(get("/api/restaurants")
@@ -91,7 +91,7 @@ class RestaurnatControllerTest {
                 .andExpect(status().isOk());
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        then(restaurantService).should().getRestaurantList(eq(condition), pageableCaptor.capture());
+        then(restaurantService).should().getRestaurants(eq(condition), pageableCaptor.capture());
         Pageable pageable = pageableCaptor.getValue();
         assertThat(pageable.getSort()).isEqualTo(Sort.by(Sort.Direction.ASC, "name"));
     }
@@ -103,7 +103,7 @@ class RestaurnatControllerTest {
         // Given
         String invalidSortParam = "invalidProperty";
         RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().build();
-        given(restaurantService.getRestaurantList(eq(condition), any(Pageable.class))).willThrow(new PropertyReferenceException(invalidSortParam, TypeInformation.of(RestaurantEntity.class), Collections.emptyList()));
+        given(restaurantService.getRestaurants(eq(condition), any(Pageable.class))).willThrow(new PropertyReferenceException(invalidSortParam, TypeInformation.of(RestaurantEntity.class), Collections.emptyList()));
 
         // When & Then
         mockMvc.perform(get("/api/restaurants")
@@ -117,7 +117,7 @@ class RestaurnatControllerTest {
         // Given
         Set<String> expectedCategories = Set.of("한식", "중식");
         RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().categories(expectedCategories).build();
-        given(restaurantService.getRestaurantList(eq(condition), any(Pageable.class))).willReturn(Page.empty());
+        given(restaurantService.getRestaurants(eq(condition), any(Pageable.class))).willReturn(Page.empty());
 
         // When & Then
         mockMvc.perform(get("/api/restaurants")
@@ -125,7 +125,7 @@ class RestaurnatControllerTest {
                 .andExpect(status().isOk());
 
         ArgumentCaptor<RestaurantSearchConditionDto> captor = ArgumentCaptor.forClass(RestaurantSearchConditionDto.class);
-        then(restaurantService).should().getRestaurantList(captor.capture(), any(Pageable.class));
+        then(restaurantService).should().getRestaurants(captor.capture(), any(Pageable.class));
 
         Set<String> categories = captor.getValue().categories();
         assertThat(categories).isEqualTo(expectedCategories);
@@ -137,7 +137,7 @@ class RestaurnatControllerTest {
         // Given
         String exepectedKeyword = "테스트";
         RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().keyword(exepectedKeyword).build();
-        given(restaurantService.getRestaurantList(eq(condition), any(Pageable.class))).willReturn(Page.empty());
+        given(restaurantService.getRestaurants(eq(condition), any(Pageable.class))).willReturn(Page.empty());
 
         // When & Then
         mockMvc.perform(get("/api/restaurants")
@@ -145,7 +145,7 @@ class RestaurnatControllerTest {
                 .andExpect(status().isOk());
 
         ArgumentCaptor<RestaurantSearchConditionDto> captor = ArgumentCaptor.forClass(RestaurantSearchConditionDto.class);
-        then(restaurantService).should().getRestaurantList(captor.capture(), any(Pageable.class));
+        then(restaurantService).should().getRestaurants(captor.capture(), any(Pageable.class));
         String keyword = captor.getValue().keyword();
         assertThat(keyword).isEqualTo(exepectedKeyword);
     }
@@ -157,7 +157,7 @@ class RestaurnatControllerTest {
         String exepectedKeyword = "테스트";
         Set<String> expectedCategories = Set.of("한식", "중식");
         RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().categories(expectedCategories).keyword(exepectedKeyword).build();
-        given(restaurantService.getRestaurantList(eq(condition), any(Pageable.class))).willReturn(Page.empty());
+        given(restaurantService.getRestaurants(eq(condition), any(Pageable.class))).willReturn(Page.empty());
 
         // When & Then
         mockMvc.perform(get("/api/restaurants")
@@ -166,7 +166,7 @@ class RestaurnatControllerTest {
                 .andExpect(status().isOk());
 
         ArgumentCaptor<RestaurantSearchConditionDto> captor = ArgumentCaptor.forClass(RestaurantSearchConditionDto.class);
-        then(restaurantService).should().getRestaurantList(captor.capture(), any(Pageable.class));
+        then(restaurantService).should().getRestaurants(captor.capture(), any(Pageable.class));
 
         String keyword = captor.getValue().keyword();
         assertThat(keyword).isEqualTo(exepectedKeyword);

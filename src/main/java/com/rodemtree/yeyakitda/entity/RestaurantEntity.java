@@ -24,7 +24,7 @@ public class RestaurantEntity extends BaseEntity {
 
     @ManyToOne
     @JoinColumn(name = "thumbnail_image_id")
-    private RestaurantImageEntity restaurantImage;
+    private RestaurantImageEntity thumbnailImage;
 
     @Column(name = "description", length = 2000, nullable = false)
     private String description;
@@ -59,6 +59,6 @@ public class RestaurantEntity extends BaseEntity {
     }
 
     public void updateRestaurantThumbnailImage(RestaurantImageEntity restaurantImage) {
-        this.restaurantImage = restaurantImage;
+        this.thumbnailImage = restaurantImage;
     }
 }
