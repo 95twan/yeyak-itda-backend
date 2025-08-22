@@ -1,5 +1,6 @@
 package com.rodemtree.yeyakitda.controller;
 
+import com.rodemtree.yeyakitda.dto.RestaurantDetailDto;
 import com.rodemtree.yeyakitda.dto.RestaurantDto;
 import com.rodemtree.yeyakitda.dto.request.RestaurantSearchConditionDto;
 import com.rodemtree.yeyakitda.dto.response.ApiResponseDto;
@@ -22,14 +23,21 @@ public class RestaurnatController {
     private final RestaurantService restaurantService;
 
     @GetMapping
-    public ResponseEntity<ApiResponseDto<PagedResponseDto<RestaurantDto>>> getRestaurnatList(
+    public ResponseEntity<ApiResponseDto<PagedResponseDto<RestaurantDto>>> getRestaurnats(
             @ModelAttribute RestaurantSearchConditionDto condition,
             @PageableDefault(size = 12, page = 0, sort = {"rating"}, direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<RestaurantDto> restaurantList = restaurantService.getRestaurantList(condition, pageable);
-        PagedResponseDto<RestaurantDto> pagedResponseDto = PagedResponseDto.of(restaurantList);
+        Page<RestaurantDto> restaurants = restaurantService.getRestaurants(condition, pageable);
+        PagedResponseDto<RestaurantDto> pagedResponseDto = PagedResponseDto.of(restaurants);
         ApiResponseDto<PagedResponseDto<RestaurantDto>> responseDto = ApiResponseDto.of(HttpStatus.OK.value(), "성공적으로 식당 목록을 조회했습니다.", pagedResponseDto);
 
+        return ResponseEntity.status(HttpStatus.OK).body(responseDto);
+    }
+
+    @GetMapping("/{restaurantId}")
+    public ResponseEntity<ApiResponseDto<RestaurantDetailDto>> getRestaurant(@PathVariable Long restaurantId) {
+        RestaurantDetailDto restaurantDetailDto = restaurantService.getRestaurant(restaurantId);
+        ApiResponseDto<RestaurantDetailDto> responseDto = ApiResponseDto.of(HttpStatus.OK.value(), "성공적으로 식당을 조회했습니다.", restaurantDetailDto);
         return ResponseEntity.status(HttpStatus.OK).body(responseDto);
     }
 

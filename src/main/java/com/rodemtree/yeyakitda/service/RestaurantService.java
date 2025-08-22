@@ -1,24 +1,49 @@
 package com.rodemtree.yeyakitda.service;
 
-import com.rodemtree.yeyakitda.dto.RestaurantDto;
+import com.rodemtree.yeyakitda.dto.*;
 import com.rodemtree.yeyakitda.dto.request.RestaurantSearchConditionDto;
+import com.rodemtree.yeyakitda.entity.MenuEntity;
 import com.rodemtree.yeyakitda.entity.RestaurantEntity;
+import com.rodemtree.yeyakitda.entity.RestaurantImageEntity;
+import com.rodemtree.yeyakitda.mapper.MenuMapper;
+import com.rodemtree.yeyakitda.repository.MenuRepository;
 import com.rodemtree.yeyakitda.mapper.RestuarantMapper;
+import com.rodemtree.yeyakitda.repository.RestaurantImageRepository;
 import com.rodemtree.yeyakitda.repository.RestaurantRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class RestaurantService {
 
     private final RestaurantRepository restaurantRepository;
+    private final RestaurantImageRepository restaurantImageRepository;
+    private final MenuRepository menuRepository;
+    private final ReviewService reviewService;
     private final RestuarantMapper restuarantMapper;
+    private final MenuMapper menuMapper;
 
-    public Page<RestaurantDto> getRestaurantList(RestaurantSearchConditionDto condition, Pageable pageable) {
-        Page<RestaurantEntity> restaurantEntityPage = restaurantRepository.search(condition, pageable);
-        return restaurantEntityPage.map(restuarantMapper::restaurantEntityToRestaurantDto);
+    public Page<RestaurantDto> getRestaurants(RestaurantSearchConditionDto condition, Pageable pageable) {
+        Page<RestaurantEntity> restaurantEntities = restaurantRepository.search(condition, pageable);
+        return restaurantEntities.map(restuarantMapper::restaurantEntityToRestaurantDto);
+    }
+
+    public RestaurantDetailDto getRestaurant(Long restaurantId) {
+        RestaurantEntity restaurantEntity = restaurantRepository.findById(restaurantId).orElseThrow(EntityNotFoundException::new);
+        List<RestaurantImageEntity> restaurantImageEntities = restaurantImageRepository.findByRestaurant_Id(restaurantId);
+        RestaurantInfoDto restaurantInfoDto = restuarantMapper.restaurantEntityToRestaurantInfoDto(restaurantEntity, restaurantImageEntities);
+
+        List<MenuEntity> menuEntities = menuRepository.findByRestaurant_Id(restaurantId);
+        List<MenuDto> menuDtos = menuMapper.menuEntitiesToMenuDtos(menuEntities);
+
+        List<ReviewDto> reviewDtos = reviewService.getTop10LatestReviews(restaurantId);
+
+        return new RestaurantDetailDto(restaurantInfoDto, menuDtos, reviewDtos);
     }
 }
