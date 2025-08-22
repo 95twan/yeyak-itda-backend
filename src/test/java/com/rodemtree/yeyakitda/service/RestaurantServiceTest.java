@@ -7,10 +7,9 @@ import com.rodemtree.yeyakitda.dto.request.RestaurantSearchConditionDto;
 import com.rodemtree.yeyakitda.entity.MenuEntity;
 import com.rodemtree.yeyakitda.entity.RestaurantEntity;
 import com.rodemtree.yeyakitda.entity.RestaurantImageEntity;
-import com.rodemtree.yeyakitda.entity.ReviewEntity;
 import com.rodemtree.yeyakitda.mapper.MenuMapper;
-import com.rodemtree.yeyakitda.repository.MenuRepository;
 import com.rodemtree.yeyakitda.mapper.RestuarantMapper;
+import com.rodemtree.yeyakitda.repository.MenuRepository;
 import com.rodemtree.yeyakitda.repository.RestaurantImageRepository;
 import com.rodemtree.yeyakitda.repository.RestaurantRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -76,10 +75,10 @@ class RestaurantServiceTest {
         Pageable pageable = PageRequest.of(0, 10, Sort.by("rating").descending());
         RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().build();
 
-        List<RestaurantEntity> restaurantEntityList = IntStream.range(1, 11)
+        List<RestaurantEntity> restaurantEntities = IntStream.range(1, 11)
                 .mapToObj(i -> createRestaurant("restaurant" + i))
                 .toList();
-        Page<RestaurantEntity> restaurantEntityPage = new PageImpl<>(restaurantEntityList, pageable, 10);
+        Page<RestaurantEntity> restaurantEntityPage = new PageImpl<>(restaurantEntities, pageable, 10);
         given(restaurantRepository.search(condition, pageable)).willReturn(restaurantEntityPage);
 
         // When
@@ -158,7 +157,7 @@ class RestaurantServiceTest {
         given(restaurantRepository.search(condition, pageable)).willReturn(Page.empty());
 
         // When
-        Page<RestaurantDto> result = restaurantService.getRestaurants(condition, pageable);
+        restaurantService.getRestaurants(condition, pageable);
 
         // Then
         then(restaurantRepository).should().search(condition, pageable);
