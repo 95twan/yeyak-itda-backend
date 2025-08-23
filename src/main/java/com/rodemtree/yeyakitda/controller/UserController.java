@@ -2,6 +2,7 @@ package com.rodemtree.yeyakitda.controller;
 
 import com.rodemtree.yeyakitda.dto.request.SignUpRequestDto;
 import com.rodemtree.yeyakitda.dto.response.ApiResponseDto;
+import com.rodemtree.yeyakitda.dto.response.ResponseSuccessCode;
 import com.rodemtree.yeyakitda.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,7 @@ public class UserController {
     public ResponseEntity<ApiResponseDto<?>> signUp(@Valid @RequestBody SignUpRequestDto dto) {
         userService.signUp(dto);
 
-        ApiResponseDto<?> responseDto = ApiResponseDto.of(HttpStatus.CREATED.value(), "성공적으로 회원가입 되었습니다.");
+        ApiResponseDto<?> responseDto = ApiResponseDto.of(ResponseSuccessCode.SIGNUP);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }

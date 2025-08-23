@@ -5,6 +5,7 @@ import com.rodemtree.yeyakitda.dto.RestaurantDto;
 import com.rodemtree.yeyakitda.dto.request.RestaurantSearchConditionDto;
 import com.rodemtree.yeyakitda.dto.response.ApiResponseDto;
 import com.rodemtree.yeyakitda.dto.response.PagedResponseDto;
+import com.rodemtree.yeyakitda.dto.response.ResponseSuccessCode;
 import com.rodemtree.yeyakitda.service.RestaurantService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,7 +30,7 @@ public class RestaurantController {
     ) {
         Page<RestaurantDto> restaurants = restaurantService.searchRestaurants(condition, pageable);
         PagedResponseDto<RestaurantDto> pagedResponseDto = PagedResponseDto.of(restaurants);
-        ApiResponseDto<PagedResponseDto<RestaurantDto>> responseDto = ApiResponseDto.of(HttpStatus.OK.value(), "성공적으로 식당 목록을 조회했습니다.", pagedResponseDto);
+        ApiResponseDto<PagedResponseDto<RestaurantDto>> responseDto = ApiResponseDto.of(ResponseSuccessCode.RESTAURANTS, pagedResponseDto);
 
         return ResponseEntity.status(HttpStatus.OK).body(responseDto);
     }
@@ -37,7 +38,7 @@ public class RestaurantController {
     @GetMapping("/{restaurantId}")
     public ResponseEntity<ApiResponseDto<RestaurantDetailDto>> getRestaurantDetail(@PathVariable Long restaurantId) {
         RestaurantDetailDto restaurantDetailDto = restaurantService.getRestaurantDetail(restaurantId);
-        ApiResponseDto<RestaurantDetailDto> responseDto = ApiResponseDto.of(HttpStatus.OK.value(), "성공적으로 식당을 조회했습니다.", restaurantDetailDto);
+        ApiResponseDto<RestaurantDetailDto> responseDto = ApiResponseDto.of(ResponseSuccessCode.RESTAURANT, restaurantDetailDto);
         return ResponseEntity.status(HttpStatus.OK).body(responseDto);
     }
 

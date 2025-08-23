@@ -2,6 +2,7 @@ package com.rodemtree.yeyakitda.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rodemtree.yeyakitda.dto.response.ApiResponseDto;
+import com.rodemtree.yeyakitda.dto.response.ResponseErrorCode;
 import com.rodemtree.yeyakitda.security.JwtAuthenticationFilter;
 import com.rodemtree.yeyakitda.security.LoginAuthenticationFilter;
 import com.rodemtree.yeyakitda.service.AuthService;
@@ -57,7 +58,7 @@ public class SecurityConfig {
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             response.setCharacterEncoding("UTF-8");
 
-            ApiResponseDto<?> responseDto = ApiResponseDto.of(HttpStatus.UNAUTHORIZED.value(), "인증이 필요한 서비스입니다.");
+            ApiResponseDto<?> responseDto = ApiResponseDto.of(ResponseErrorCode.UNAUTHORIZED);
 
             response.getWriter().write(objectMapper.writeValueAsString(responseDto));
         };
