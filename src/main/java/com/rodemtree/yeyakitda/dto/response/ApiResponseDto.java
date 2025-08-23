@@ -16,6 +16,10 @@ public record ApiResponseDto<T>(
         return new ApiResponseDto<> (code.getStatus(), code.getMessage(), null);
     }
 
+    public static ApiResponseDto<?> of(int status, String message) {
+        return new ApiResponseDto<> (status, message, null);
+    }
+
     public static <T> ApiResponseDto<T> of(ResponseSuccessCode code, T data) {
         return new ApiResponseDto<> (code.getStatus(), code.getMessage(), data);
     }

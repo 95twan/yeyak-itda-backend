@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record SignUpRequestDto(
-        @NotBlank
+        @NotBlank(message = "이름은 필수 입력 항목입니다.")
         @Size(max = 32)
         String name,
         @NotBlank

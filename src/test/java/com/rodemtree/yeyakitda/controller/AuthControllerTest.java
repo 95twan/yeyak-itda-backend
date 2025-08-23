@@ -4,6 +4,7 @@ package com.rodemtree.yeyakitda.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import com.rodemtree.yeyakitda.dto.request.LoginRequestDto;
+import com.rodemtree.yeyakitda.dto.response.ResponseErrorCode;
 import com.rodemtree.yeyakitda.entity.RefreshTokenEntity;
 import com.rodemtree.yeyakitda.entity.UserEntity;
 import com.rodemtree.yeyakitda.repository.RefreshTokenRepository;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -278,5 +280,21 @@ class AuthControllerTest {
 
         String reissuedRefreshToken = JsonPath.read(reissueResponseBody, "$.data.refreshToken");
         assertThat(reissuedRefreshToken).isNotEqualTo(refreshToken);
+    }
+
+    @Test
+    @DisplayName("실패 - 유효하지 않은 Refresh Token으로 요청 시, 401 Unauthorized을 응답한다.")
+    void reissueTokenWithInvalidRefreshTokenTest() throws Exception {
+        String refreshToken = "Invalid refresh token";
+
+        // When & Then
+        mockMvc.perform(post("/api/auth/reissue")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("refreshToken", refreshToken))))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(ResponseErrorCode.INVALID_TOKEN.getStatus()))
+                .andExpect(jsonPath("$.message").value(ResponseErrorCode.INVALID_TOKEN.getMessage()))
+                .andReturn().getResponse().getContentAsString();
+
     }
 }

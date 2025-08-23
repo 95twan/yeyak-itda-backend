@@ -4,6 +4,7 @@ import com.rodemtree.yeyakitda.dto.JwtUserInfoDto;
 import com.rodemtree.yeyakitda.dto.LoginSuccessDto;
 import com.rodemtree.yeyakitda.entity.RefreshTokenEntity;
 import com.rodemtree.yeyakitda.entity.UserEntity;
+import com.rodemtree.yeyakitda.exception.InvalidTokenException;
 import com.rodemtree.yeyakitda.repository.RefreshTokenRepository;
 import com.rodemtree.yeyakitda.repository.UserRepository;
 import com.rodemtree.yeyakitda.util.JwtUtil;
@@ -42,12 +43,8 @@ public class AuthService {
 
     @Transactional
     public LoginSuccessDto reissueToken(String refreshToken) {
-        if (!jwtUtil.isTokenValid(refreshToken) || !"refresh".equals(jwtUtil.getType(refreshToken)))
-            throw new RuntimeException("유효하지 않은 토큰 입니다.");
-        RefreshTokenEntity refreshTokenEntity = refreshTokenRepository.findByToken(refreshToken).orElseThrow(
-                // Todo: 예외 처리 기능 넣을 때 수정 없는 토큰이면 유효하지 않은 토큰이 맞음
-                () -> new EntityNotFoundException("일치하는 refresh token을 찾을 수 없습니다.")
-        );
+        if (!jwtUtil.isTokenValid(refreshToken) || !"refresh".equals(jwtUtil.getType(refreshToken))) throw new InvalidTokenException();
+        RefreshTokenEntity refreshTokenEntity = refreshTokenRepository.findByToken(refreshToken).orElseThrow(InvalidTokenException::new);
 
         UserEntity userEntity = refreshTokenEntity.getUser();
         JwtUserInfoDto userInfoDto = JwtUserInfoDto.of(userEntity.getEmail(), userEntity.getRole());

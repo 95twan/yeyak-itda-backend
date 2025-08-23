@@ -6,8 +6,10 @@ import com.rodemtree.yeyakitda.dto.RestaurantDetailDto;
 import com.rodemtree.yeyakitda.dto.RestaurantInfoDto;
 import com.rodemtree.yeyakitda.dto.ReviewDto;
 import com.rodemtree.yeyakitda.dto.request.RestaurantSearchConditionDto;
+import com.rodemtree.yeyakitda.dto.response.ResponseErrorCode;
 import com.rodemtree.yeyakitda.entity.RestaurantEntity;
 import com.rodemtree.yeyakitda.service.RestaurantService;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,6 +20,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.*;
 import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.data.util.TypeInformation;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -101,18 +104,19 @@ class RestaurantControllerTest {
     }
 
     @Test
-    @Disabled
     @DisplayName("실패 - 존재하지 않는 필드로 정렬을 요청하면 400 Bad Request를 반환한다.")
     void searchRestaurantsWithInvalidSortParamTest() throws Exception {
         // Given
         String invalidSortParam = "invalidProperty";
-        RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().build();
-        given(restaurantService.searchRestaurants(eq(condition), any(Pageable.class))).willThrow(new PropertyReferenceException(invalidSortParam, TypeInformation.of(RestaurantEntity.class), Collections.emptyList()));
+        given(restaurantService.searchRestaurants(any(RestaurantSearchConditionDto.class), any(Pageable.class)))
+                .willThrow(new PropertyReferenceException(invalidSortParam, TypeInformation.of(RestaurantEntity.class), Collections.emptyList()));
 
         // When & Then
         mockMvc.perform(get("/api/restaurants")
                         .param("sort", invalidSortParam + ",asc"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(HttpStatus.BAD_REQUEST.value()))
+                .andExpect(jsonPath("$.message").value("잘못된 정렬 기준입니다: '" + invalidSortParam + "'"));
     }
 
     @Test
@@ -192,6 +196,22 @@ class RestaurantControllerTest {
                 .andExpect(jsonPath("$.data.restaurant").isNotEmpty())
                 .andExpect(jsonPath("$.data.menus").isArray())
                 .andExpect(jsonPath("$.data.reviews").isArray());
+
+        then(restaurantService).should().getRestaurantDetail(restaurantId);
+    }
+
+    @Test
+    @DisplayName("실패 - 없는 식당 ID로 상세 조회를 요청하면, 404 NotFound를 응답한다.")
+    void getRestaurantDetailWithNotExistRestaurantId() throws Exception {
+        // Given
+        Long restaurantId = 999L;
+        given(restaurantService.getRestaurantDetail(restaurantId)).willThrow(new EntityNotFoundException());
+
+        // When & Then
+        mockMvc.perform(get("/api/restaurants/" + restaurantId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(ResponseErrorCode.RESOURCE_NOT_FOUND.getStatus()))
+                .andExpect(jsonPath("$.message").value(ResponseErrorCode.RESOURCE_NOT_FOUND.getMessage()));
 
         then(restaurantService).should().getRestaurantDetail(restaurantId);
     }
