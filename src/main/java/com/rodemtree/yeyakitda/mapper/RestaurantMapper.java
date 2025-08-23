@@ -10,7 +10,7 @@ import org.mapstruct.Mapping;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
-public interface RestuarantMapper {
+public interface RestaurantMapper {
 
     @Mapping(source = "thumbnailImage.imageUrl", target = "thumbnailImageUrl")
     RestaurantDto restaurantEntityToRestaurantDto(RestaurantEntity entity);

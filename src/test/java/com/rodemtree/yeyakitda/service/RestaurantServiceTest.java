@@ -8,7 +8,7 @@ import com.rodemtree.yeyakitda.entity.MenuEntity;
 import com.rodemtree.yeyakitda.entity.RestaurantEntity;
 import com.rodemtree.yeyakitda.entity.RestaurantImageEntity;
 import com.rodemtree.yeyakitda.mapper.MenuMapper;
-import com.rodemtree.yeyakitda.mapper.RestuarantMapper;
+import com.rodemtree.yeyakitda.mapper.RestaurantMapper;
 import com.rodemtree.yeyakitda.repository.MenuRepository;
 import com.rodemtree.yeyakitda.repository.RestaurantImageRepository;
 import com.rodemtree.yeyakitda.repository.RestaurantRepository;
@@ -53,7 +53,7 @@ class RestaurantServiceTest {
     @Mock
     private ReviewService reviewService;
 
-    private final RestuarantMapper restuarantMapper = Mappers.getMapper(RestuarantMapper.class);
+    private final RestaurantMapper restaurantMapper = Mappers.getMapper(RestaurantMapper.class);
     private final MenuMapper menuMapper = Mappers.getMapper(MenuMapper.class);
 
     @BeforeEach
@@ -63,14 +63,14 @@ class RestaurantServiceTest {
                 restaurantImageRepository,
                 menuRepository,
                 reviewService,
-                restuarantMapper,
+                restaurantMapper,
                 menuMapper
         );
     }
 
     @Test
     @DisplayName("성공 - 페이징 정보를 받아 식당 목록을 조회하면 식당 DTO 페이지를 반환한다.")
-    void getRestaurantsTest() {
+    void searchRestaurantsTest() {
         // Given
         Pageable pageable = PageRequest.of(0, 10, Sort.by("rating").descending());
         RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().build();
@@ -82,7 +82,7 @@ class RestaurantServiceTest {
         given(restaurantRepository.search(condition, pageable)).willReturn(restaurantEntityPage);
 
         // When
-        Page<RestaurantDto> result = restaurantService.getRestaurants(condition, pageable);
+        Page<RestaurantDto> result = restaurantService.searchRestaurants(condition, pageable);
 
         // Then
         then(restaurantRepository).should().search(condition, pageable);
@@ -94,7 +94,7 @@ class RestaurantServiceTest {
 
     @Test
     @DisplayName("실패 - 유효하지 않은 필드로 정렬을 요청하면, PropertyReferenceException을 던진다.")
-    void getRestaurantsWithInvalidSortTest() {
+    void searchRestaurantsWithInvalidSortTest() {
         // Given
         Pageable pageable = PageRequest.of(0, 10, Sort.by("invalid").descending());
         RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().build();
@@ -103,7 +103,7 @@ class RestaurantServiceTest {
                 .willThrow(new PropertyReferenceException("invalid", TypeInformation.of(RestaurantEntity.class), Collections.emptyList()));
 
         // When & Then
-        assertThatThrownBy(() -> restaurantService.getRestaurants(condition, pageable))
+        assertThatThrownBy(() -> restaurantService.searchRestaurants(condition, pageable))
                 .isInstanceOf(PropertyReferenceException.class);
 
         then(restaurantRepository).should().search(condition, pageable);
@@ -111,7 +111,7 @@ class RestaurantServiceTest {
 
     @Test
     @DisplayName("성공 - 카테고리로 식당 목록을 조회하면 해당 카테고리의 식당 Dto 페이지를 반환한다.")
-    void getRestaurantsWithCategoryTest() {
+    void searchRestaurantsWithCategoryTest() {
         // Given
         Set<String> categories = Set.of("한식");
         RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().categories(categories).build();
@@ -121,7 +121,7 @@ class RestaurantServiceTest {
         given(restaurantRepository.search(condition, pageable)).willReturn(restaurantEntityPage);
 
         // When
-        Page<RestaurantDto> result = restaurantService.getRestaurants(condition, pageable);
+        Page<RestaurantDto> result = restaurantService.searchRestaurants(condition, pageable);
 
         // Then
         assertThat(result.getContent()).hasSize(1);
@@ -132,7 +132,7 @@ class RestaurantServiceTest {
 
     @Test
     @DisplayName("성공 - 키워드로 식당 목록을 조회하면 이름, 상세내용, 주소에 키워드가 포함된 식당 Dto 페이지를 반환한다.")
-    void getRestaurantsWithKeywordTest() {
+    void searchRestaurantsWithKeywordTest() {
         // Given
         String keyword = "테스트";
         RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().keyword(keyword).build();
@@ -140,7 +140,7 @@ class RestaurantServiceTest {
         given(restaurantRepository.search(condition, pageable)).willReturn(Page.empty());
 
         // When
-        Page<RestaurantDto> result = restaurantService.getRestaurants(condition, pageable);
+        Page<RestaurantDto> result = restaurantService.searchRestaurants(condition, pageable);
 
         // Then
         then(restaurantRepository).should().search(condition, pageable);
@@ -148,7 +148,7 @@ class RestaurantServiceTest {
 
     @Test
     @DisplayName("성공 - 카테고리와 키워드로 식당 목록을 조회하면 해당하는 식당 Dto 페이지를 반환한다.")
-    void getRestaurantsWithCategoriesAndKeywordTest() {
+    void searchRestaurantsWithCategoriesAndKeywordTest() {
         // Given
         Set<String> categories = Set.of("한식");
         String keyword = "테스트";
@@ -157,7 +157,7 @@ class RestaurantServiceTest {
         given(restaurantRepository.search(condition, pageable)).willReturn(Page.empty());
 
         // When
-        restaurantService.getRestaurants(condition, pageable);
+        restaurantService.searchRestaurants(condition, pageable);
 
         // Then
         then(restaurantRepository).should().search(condition, pageable);
@@ -165,7 +165,7 @@ class RestaurantServiceTest {
 
     @Test
     @DisplayName("성공 - 식당 Id를 받아 식당을 조회하면 식당 DTO를 반환한다.")
-    void getRestaurantTest() {
+    void getRestaurantDetailTest() {
         // Given
         Long restaurantId = 1L;
         RestaurantEntity restaurantEntity = createRestaurant("테스트 식당");
@@ -173,7 +173,7 @@ class RestaurantServiceTest {
         given(restaurantRepository.findById(restaurantId)).willReturn(Optional.of(restaurantEntity));
 
         // When
-        RestaurantDetailDto result = restaurantService.getRestaurant(restaurantId);
+        RestaurantDetailDto result = restaurantService.getRestaurantDetail(restaurantId);
 
         // Then
         then(restaurantRepository).should().findById(restaurantId);
@@ -184,13 +184,13 @@ class RestaurantServiceTest {
 
     @Test
     @DisplayName("실패 - 없는 식당 Id를 받아 식당을 조회하면 EntityNotFoundException을 반환한다.")
-    void getRestaurantWithNotExistIdTest() {
+    void getRestaurantDetailWithNotExistIdTest() {
         // Given
         Long restaurantId = 999L;
         given(restaurantRepository.findById(restaurantId)).willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> restaurantService.getRestaurant(restaurantId))
+        assertThatThrownBy(() -> restaurantService.getRestaurantDetail(restaurantId))
                 .isInstanceOf(EntityNotFoundException.class);
 
         then(restaurantRepository).should().findById(restaurantId);
@@ -198,7 +198,7 @@ class RestaurantServiceTest {
 
     @Test
     @DisplayName("성공 - 식당 Id를 받아 식당을 조회하면 식당 이미지를 포함한 식당 DTO를 반환한다.")
-    void getRestaurantWithRestaurantImageTest() {
+    void getRestaurantWithRestaurantDetailImageTest() {
         // Given
         Long restaurantId = 1L;
         RestaurantEntity restaurantEntity = createRestaurant("테스트 식당");
@@ -211,7 +211,7 @@ class RestaurantServiceTest {
         given(restaurantImageRepository.findByRestaurant_Id(restaurantId)).willReturn(restaurantImages);
 
         // When
-        RestaurantDetailDto result = restaurantService.getRestaurant(restaurantId);
+        RestaurantDetailDto result = restaurantService.getRestaurantDetail(restaurantId);
 
         // Then
         then(restaurantRepository).should().findById(restaurantId);
@@ -222,7 +222,7 @@ class RestaurantServiceTest {
 
     @Test
     @DisplayName("성공 - 식당 Id를 받아 식당을 조회하면 메뉴를 포함한 식당 DTO를 반환한다.")
-    void getRestaurantWithMenuTest() {
+    void getRestaurantDetailWithMenuTest() {
         // Given
         Long restaurantId = 1L;
         RestaurantEntity restaurantEntity = createRestaurant("테스트 식당");
@@ -235,7 +235,7 @@ class RestaurantServiceTest {
         given(menuRepository.findByRestaurant_Id(restaurantId)).willReturn(menus);
 
         // When
-        RestaurantDetailDto result = restaurantService.getRestaurant(restaurantId);
+        RestaurantDetailDto result = restaurantService.getRestaurantDetail(restaurantId);
 
         // Then
         then(restaurantRepository).should().findById(restaurantId);
@@ -246,7 +246,7 @@ class RestaurantServiceTest {
 
     @Test
     @DisplayName("성공 - 식당 Id를 받아 식당을 조회하면 최신 리뷰10개를 포함한 식당 DTO를 반환한다.")
-    void getRestaurantWithReviewTest() {
+    void getRestaurantDetailWithReviewTest() {
         // Given
         Long restaurantId = 1L;
         RestaurantEntity restaurantEntity = createRestaurant("테스트 식당");
@@ -259,7 +259,7 @@ class RestaurantServiceTest {
         given(reviewService.getTop10LatestReviews(restaurantId)).willReturn(reviews);
 
         // When
-        RestaurantDetailDto result = restaurantService.getRestaurant(restaurantId);
+        RestaurantDetailDto result = restaurantService.getRestaurantDetail(restaurantId);
 
         // Then
         then(restaurantRepository).should().findById(restaurantId);

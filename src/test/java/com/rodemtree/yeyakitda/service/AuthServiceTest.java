@@ -53,7 +53,7 @@ class AuthServiceTest {
         given(refreshTokenRepository.findByUser_Email(userEntity.getEmail())).willReturn(Optional.empty());
 
         // When
-        authService.updateRefreshToken(email, refreshToken, expireAt);
+        authService.saveOrUpdateRefreshToken(email, refreshToken, expireAt);
 
         // Then
         then(refreshTokenRepository).should().save(any());
@@ -74,7 +74,7 @@ class AuthServiceTest {
         given(refreshTokenRepository.findByUser_Email(userEntity.getEmail())).willReturn(Optional.of(refreshTokenEntity));
 
         // When
-        authService.updateRefreshToken(email, newRefreshToken, newExpireAt);
+        authService.saveOrUpdateRefreshToken(email, newRefreshToken, newExpireAt);
 
         // Then
         then(refreshTokenEntity).should().updateRefreshToken(newRefreshToken, newExpireAt);

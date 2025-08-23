@@ -6,8 +6,8 @@ import com.rodemtree.yeyakitda.entity.MenuEntity;
 import com.rodemtree.yeyakitda.entity.RestaurantEntity;
 import com.rodemtree.yeyakitda.entity.RestaurantImageEntity;
 import com.rodemtree.yeyakitda.mapper.MenuMapper;
+import com.rodemtree.yeyakitda.mapper.RestaurantMapper;
 import com.rodemtree.yeyakitda.repository.MenuRepository;
-import com.rodemtree.yeyakitda.mapper.RestuarantMapper;
 import com.rodemtree.yeyakitda.repository.RestaurantImageRepository;
 import com.rodemtree.yeyakitda.repository.RestaurantRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -26,18 +26,18 @@ public class RestaurantService {
     private final RestaurantImageRepository restaurantImageRepository;
     private final MenuRepository menuRepository;
     private final ReviewService reviewService;
-    private final RestuarantMapper restuarantMapper;
+    private final RestaurantMapper restaurantMapper;
     private final MenuMapper menuMapper;
 
-    public Page<RestaurantDto> getRestaurants(RestaurantSearchConditionDto condition, Pageable pageable) {
+    public Page<RestaurantDto> searchRestaurants(RestaurantSearchConditionDto condition, Pageable pageable) {
         Page<RestaurantEntity> restaurantEntities = restaurantRepository.search(condition, pageable);
-        return restaurantEntities.map(restuarantMapper::restaurantEntityToRestaurantDto);
+        return restaurantEntities.map(restaurantMapper::restaurantEntityToRestaurantDto);
     }
 
-    public RestaurantDetailDto getRestaurant(Long restaurantId) {
+    public RestaurantDetailDto getRestaurantDetail(Long restaurantId) {
         RestaurantEntity restaurantEntity = restaurantRepository.findById(restaurantId).orElseThrow(EntityNotFoundException::new);
         List<RestaurantImageEntity> restaurantImageEntities = restaurantImageRepository.findByRestaurant_Id(restaurantId);
-        RestaurantInfoDto restaurantInfoDto = restuarantMapper.restaurantEntityToRestaurantInfoDto(restaurantEntity, restaurantImageEntities);
+        RestaurantInfoDto restaurantInfoDto = restaurantMapper.restaurantEntityToRestaurantInfoDto(restaurantEntity, restaurantImageEntities);
 
         List<MenuEntity> menuEntities = menuRepository.findByRestaurant_Id(restaurantId);
         List<MenuDto> menuDtos = menuMapper.menuEntitiesToMenuDtos(menuEntities);

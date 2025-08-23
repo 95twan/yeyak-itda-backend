@@ -16,9 +16,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 
 @ExtendWith(MockitoExtension.class)
-class RestuarantMapperTest {
+class RestaurantMapperTest {
 
-    private final RestuarantMapper restuarantMapper = Mappers.getMapper(RestuarantMapper.class);
+    private final RestaurantMapper restaurantMapper = Mappers.getMapper(RestaurantMapper.class);
 
     @Test
     @DisplayName("성공 - restaurantEntity -> restaurantDto 변환")
@@ -34,7 +34,7 @@ class RestuarantMapperTest {
         restaurantEntity.updateRestaurantThumbnailImage(restaurantImageEntity);
 
         // When
-        RestaurantDto restaurantDto = restuarantMapper.restaurantEntityToRestaurantDto(restaurantEntity);
+        RestaurantDto restaurantDto = restaurantMapper.restaurantEntityToRestaurantDto(restaurantEntity);
 
         // Then
         assertThat(restaurantDto.name()).isEqualTo(restaurantEntity.getName());
@@ -62,7 +62,7 @@ class RestuarantMapperTest {
         restaurantEntity.updateRestaurantThumbnailImage(restaurantImageEntity1);
 
         // When
-        RestaurantInfoDto restaurantInfoDto = restuarantMapper.restaurantEntityToRestaurantInfoDto(restaurantEntity, restaurantImages);
+        RestaurantInfoDto restaurantInfoDto = restaurantMapper.restaurantEntityToRestaurantInfoDto(restaurantEntity, restaurantImages);
 
         // Then
         assertThat(restaurantInfoDto.name()).isEqualTo(restaurantEntity.getName());

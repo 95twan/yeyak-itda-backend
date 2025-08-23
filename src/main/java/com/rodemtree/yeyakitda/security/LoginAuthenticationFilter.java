@@ -67,7 +67,7 @@ public class LoginAuthenticationFilter extends UsernamePasswordAuthenticationFil
         String refreshToken = jwtUtil.createRefreshToken(userInfoDto);
         LocalDateTime expireAt = jwtUtil.getExpiration(refreshToken);
 
-        authService.updateRefreshToken(userDetails.getUsername(), refreshToken, expireAt);
+        authService.saveOrUpdateRefreshToken(userDetails.getUsername(), refreshToken, expireAt);
 
         response.setStatus(HttpStatus.OK.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);

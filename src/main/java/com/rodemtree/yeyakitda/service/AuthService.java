@@ -21,7 +21,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtUtil jwtUtil;
 
-    public void updateRefreshToken(String email, String refreshToken, LocalDateTime expireAt) {
+    public void saveOrUpdateRefreshToken(String email, String refreshToken, LocalDateTime expireAt) {
         UserEntity userEntity = userRepository.findByEmail(email).orElseThrow(() -> new EntityNotFoundException("인증된 사용자를 찾을 수 없습니다."));
         refreshTokenRepository.findByUser_Email(email).ifPresentOrElse(
                 savedToken -> savedToken.updateRefreshToken(refreshToken, expireAt),

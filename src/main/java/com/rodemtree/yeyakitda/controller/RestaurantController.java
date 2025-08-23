@@ -18,16 +18,16 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/restaurants")
 @RequiredArgsConstructor
-public class RestaurnatController {
+public class RestaurantController {
 
     private final RestaurantService restaurantService;
 
     @GetMapping
-    public ResponseEntity<ApiResponseDto<PagedResponseDto<RestaurantDto>>> getRestaurnats(
+    public ResponseEntity<ApiResponseDto<PagedResponseDto<RestaurantDto>>> searchRestaurants(
             @ModelAttribute RestaurantSearchConditionDto condition,
             @PageableDefault(size = 12, page = 0, sort = {"rating"}, direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<RestaurantDto> restaurants = restaurantService.getRestaurants(condition, pageable);
+        Page<RestaurantDto> restaurants = restaurantService.searchRestaurants(condition, pageable);
         PagedResponseDto<RestaurantDto> pagedResponseDto = PagedResponseDto.of(restaurants);
         ApiResponseDto<PagedResponseDto<RestaurantDto>> responseDto = ApiResponseDto.of(HttpStatus.OK.value(), "성공적으로 식당 목록을 조회했습니다.", pagedResponseDto);
 
@@ -35,8 +35,8 @@ public class RestaurnatController {
     }
 
     @GetMapping("/{restaurantId}")
-    public ResponseEntity<ApiResponseDto<RestaurantDetailDto>> getRestaurant(@PathVariable Long restaurantId) {
-        RestaurantDetailDto restaurantDetailDto = restaurantService.getRestaurant(restaurantId);
+    public ResponseEntity<ApiResponseDto<RestaurantDetailDto>> getRestaurantDetail(@PathVariable Long restaurantId) {
+        RestaurantDetailDto restaurantDetailDto = restaurantService.getRestaurantDetail(restaurantId);
         ApiResponseDto<RestaurantDetailDto> responseDto = ApiResponseDto.of(HttpStatus.OK.value(), "성공적으로 식당을 조회했습니다.", restaurantDetailDto);
         return ResponseEntity.status(HttpStatus.OK).body(responseDto);
     }

@@ -33,9 +33,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(RestaurnatController.class)
+@WebMvcTest(RestaurantController.class)
 @Import(TestSecurityConfig.class)
-class RestaurnatControllerTest {
+class RestaurantControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -45,10 +45,10 @@ class RestaurnatControllerTest {
 
     @Test
     @DisplayName("성공 - 식당 목록을 요청하면 기본 페이징(0페이지, 12개)된 식당 목록을 반환한다.")
-    void getRestaurantsWithDefaultPaging() throws Exception {
+    void searchRestaurantsWithDefaultPagingTest() throws Exception {
         // Given
         RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().build();
-        given(restaurantService.getRestaurants(eq(condition), any(Pageable.class))).willReturn(new PageImpl<>(List.of(), PageRequest.of(0, 12), 0));
+        given(restaurantService.searchRestaurants(eq(condition), any(Pageable.class))).willReturn(new PageImpl<>(List.of(), PageRequest.of(0, 12), 0));
 
         // When & Then
         mockMvc.perform(get("/api/restaurants"))
@@ -58,18 +58,18 @@ class RestaurnatControllerTest {
                 .andExpect(jsonPath("$.data.pageInfo.page").value(0))
                 .andExpect(jsonPath("$.data.pageInfo.size").value(12));
 
-        then(restaurantService).should().getRestaurants(eq(condition), any(Pageable.class));
+        then(restaurantService).should().searchRestaurants(eq(condition), any(Pageable.class));
     }
 
     @Test
     @DisplayName("성공 - 페이지 정보로 식당 목록을 요청하면 페이징된 식당 목록을 반환한다.")
-    void getRestaurantsWithPaging() throws Exception {
+    void searchRestaurantsWithPagingTest() throws Exception {
         // Given
         int page = 0;
         int size = 8;
         Pageable pageable = PageRequest.of(page, size);
         RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().build();
-        given(restaurantService.getRestaurants(eq(condition), any(Pageable.class))).willReturn(new PageImpl<>(List.of(), pageable, 0));
+        given(restaurantService.searchRestaurants(eq(condition), any(Pageable.class))).willReturn(new PageImpl<>(List.of(), pageable, 0));
 
         // When & Then
         mockMvc.perform(get("/api/restaurants")
@@ -79,15 +79,15 @@ class RestaurnatControllerTest {
                 .andExpect(jsonPath("$.data.pageInfo.page").value(0))
                 .andExpect(jsonPath("$.data.pageInfo.size").value(8));
 
-        then(restaurantService).should().getRestaurants(eq(condition), any(Pageable.class));
+        then(restaurantService).should().searchRestaurants(eq(condition), any(Pageable.class));
     }
 
     @Test
     @DisplayName("성공 - 정렬 정보로 식당 목록을 요청하면 정렬된 식당 목록을 반환한다.")
-    void getRestaurantsWithSorting() throws Exception {
+    void searchRestaurantsWithSortingTest() throws Exception {
         // Given
         RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().build();
-        given(restaurantService.getRestaurants(eq(condition), any(Pageable.class))).willReturn(Page.empty());
+        given(restaurantService.searchRestaurants(eq(condition), any(Pageable.class))).willReturn(Page.empty());
 
         // When & Then
         mockMvc.perform(get("/api/restaurants")
@@ -95,7 +95,7 @@ class RestaurnatControllerTest {
                 .andExpect(status().isOk());
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        then(restaurantService).should().getRestaurants(eq(condition), pageableCaptor.capture());
+        then(restaurantService).should().searchRestaurants(eq(condition), pageableCaptor.capture());
         Pageable pageable = pageableCaptor.getValue();
         assertThat(pageable.getSort()).isEqualTo(Sort.by(Sort.Direction.ASC, "name"));
     }
@@ -103,11 +103,11 @@ class RestaurnatControllerTest {
     @Test
     @Disabled
     @DisplayName("실패 - 존재하지 않는 필드로 정렬을 요청하면 400 Bad Request를 반환한다.")
-    void getRestaurantsWithInvalidSortProperty() throws Exception {
+    void searchRestaurantsWithInvalidSortParamTest() throws Exception {
         // Given
         String invalidSortParam = "invalidProperty";
         RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().build();
-        given(restaurantService.getRestaurants(eq(condition), any(Pageable.class))).willThrow(new PropertyReferenceException(invalidSortParam, TypeInformation.of(RestaurantEntity.class), Collections.emptyList()));
+        given(restaurantService.searchRestaurants(eq(condition), any(Pageable.class))).willThrow(new PropertyReferenceException(invalidSortParam, TypeInformation.of(RestaurantEntity.class), Collections.emptyList()));
 
         // When & Then
         mockMvc.perform(get("/api/restaurants")
@@ -117,11 +117,11 @@ class RestaurnatControllerTest {
 
     @Test
     @DisplayName("성공 - 카테고리로 식당 목록을 요청하면 해당 카테고리의 식당 목록을 반환한다.")
-    void getRestaurantsWithCategories() throws Exception {
+    void searchRestaurantsWithCategoriesTest() throws Exception {
         // Given
         Set<String> expectedCategories = Set.of("한식", "중식");
         RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().categories(expectedCategories).build();
-        given(restaurantService.getRestaurants(eq(condition), any(Pageable.class))).willReturn(Page.empty());
+        given(restaurantService.searchRestaurants(eq(condition), any(Pageable.class))).willReturn(Page.empty());
 
         // When & Then
         mockMvc.perform(get("/api/restaurants")
@@ -129,7 +129,7 @@ class RestaurnatControllerTest {
                 .andExpect(status().isOk());
 
         ArgumentCaptor<RestaurantSearchConditionDto> captor = ArgumentCaptor.forClass(RestaurantSearchConditionDto.class);
-        then(restaurantService).should().getRestaurants(captor.capture(), any(Pageable.class));
+        then(restaurantService).should().searchRestaurants(captor.capture(), any(Pageable.class));
 
         Set<String> categories = captor.getValue().categories();
         assertThat(categories).isEqualTo(expectedCategories);
@@ -137,11 +137,11 @@ class RestaurnatControllerTest {
 
     @Test
     @DisplayName("성공 - 카테고리로 식당 목록을 요청하면 해당 카테고리의 식당 목록을 반환한다.")
-    void getRestaurantsWithKeyword() throws Exception {
+    void searchRestaurantsWithKeywordTest() throws Exception {
         // Given
         String exepectedKeyword = "테스트";
         RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().keyword(exepectedKeyword).build();
-        given(restaurantService.getRestaurants(eq(condition), any(Pageable.class))).willReturn(Page.empty());
+        given(restaurantService.searchRestaurants(eq(condition), any(Pageable.class))).willReturn(Page.empty());
 
         // When & Then
         mockMvc.perform(get("/api/restaurants")
@@ -149,19 +149,19 @@ class RestaurnatControllerTest {
                 .andExpect(status().isOk());
 
         ArgumentCaptor<RestaurantSearchConditionDto> captor = ArgumentCaptor.forClass(RestaurantSearchConditionDto.class);
-        then(restaurantService).should().getRestaurants(captor.capture(), any(Pageable.class));
+        then(restaurantService).should().searchRestaurants(captor.capture(), any(Pageable.class));
         String keyword = captor.getValue().keyword();
         assertThat(keyword).isEqualTo(exepectedKeyword);
     }
 
     @Test
     @DisplayName("성공 - 카테고리로 식당 목록을 요청하면 해당 카테고리의 식당 목록을 반환한다.")
-    void getRestaurantsWithCategoriesAndKeyword() throws Exception {
+    void searchRestaurantsWithCategoriesAndKeywordTest() throws Exception {
         // Given
         String exepectedKeyword = "테스트";
         Set<String> expectedCategories = Set.of("한식", "중식");
         RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().categories(expectedCategories).keyword(exepectedKeyword).build();
-        given(restaurantService.getRestaurants(eq(condition), any(Pageable.class))).willReturn(Page.empty());
+        given(restaurantService.searchRestaurants(eq(condition), any(Pageable.class))).willReturn(Page.empty());
 
         // When & Then
         mockMvc.perform(get("/api/restaurants")
@@ -170,7 +170,7 @@ class RestaurnatControllerTest {
                 .andExpect(status().isOk());
 
         ArgumentCaptor<RestaurantSearchConditionDto> captor = ArgumentCaptor.forClass(RestaurantSearchConditionDto.class);
-        then(restaurantService).should().getRestaurants(captor.capture(), any(Pageable.class));
+        then(restaurantService).should().searchRestaurants(captor.capture(), any(Pageable.class));
 
         String keyword = captor.getValue().keyword();
         assertThat(keyword).isEqualTo(exepectedKeyword);
@@ -180,11 +180,11 @@ class RestaurnatControllerTest {
 
     @Test
     @DisplayName("성공 - 식당 ID로 상세 조회를 요청하면, 200 OK와 함께 식당 상세 DTO를 반환한다.")
-    void getRestaurant() throws Exception {
+    void getRestaurantDetail() throws Exception {
         // Given
         Long restaurantId = 1L;
         RestaurantDetailDto restaurantDetailDto = createRestaurantDetailDto(restaurantId);
-        given(restaurantService.getRestaurant(restaurantId)).willReturn(restaurantDetailDto);
+        given(restaurantService.getRestaurantDetail(restaurantId)).willReturn(restaurantDetailDto);
 
         // When & Then
         mockMvc.perform(get("/api/restaurants/" + restaurantId))
@@ -193,7 +193,7 @@ class RestaurnatControllerTest {
                 .andExpect(jsonPath("$.data.menus").isArray())
                 .andExpect(jsonPath("$.data.reviews").isArray());
 
-        then(restaurantService).should().getRestaurant(restaurantId);
+        then(restaurantService).should().getRestaurantDetail(restaurantId);
     }
 
     private RestaurantDetailDto createRestaurantDetailDto(Long id) {
