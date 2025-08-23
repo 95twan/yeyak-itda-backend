@@ -5,6 +5,8 @@ import com.rodemtree.yeyakitda.dto.JwtUserInfoDto;
 import com.rodemtree.yeyakitda.dto.request.LoginRequestDto;
 import com.rodemtree.yeyakitda.dto.response.ApiResponseDto;
 import com.rodemtree.yeyakitda.dto.LoginSuccessDto;
+import com.rodemtree.yeyakitda.dto.response.ResponseErrorCode;
+import com.rodemtree.yeyakitda.dto.response.ResponseSuccessCode;
 import com.rodemtree.yeyakitda.entity.UserRole;
 import com.rodemtree.yeyakitda.service.AuthService;
 import com.rodemtree.yeyakitda.util.JwtUtil;
@@ -74,7 +76,7 @@ public class LoginAuthenticationFilter extends UsernamePasswordAuthenticationFil
         response.setCharacterEncoding("UTF-8");
 
         LoginSuccessDto loginSuccessDto = LoginSuccessDto.of(accessToken, refreshToken);
-        ApiResponseDto<?> responseDto = ApiResponseDto.of(HttpStatus.OK.value(), "로그인 성공", loginSuccessDto);
+        ApiResponseDto<?> responseDto = ApiResponseDto.of(ResponseSuccessCode.LOGIN, loginSuccessDto);
         response.getWriter().write(objectMapper.writeValueAsString(responseDto));
     }
 
@@ -84,7 +86,7 @@ public class LoginAuthenticationFilter extends UsernamePasswordAuthenticationFil
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
 
-        ApiResponseDto<?> responseDto = ApiResponseDto.of(HttpStatus.UNAUTHORIZED.value(), "이메일 또는 비밀번호가 일치하지 않습니다.");
+        ApiResponseDto<?> responseDto = ApiResponseDto.of(ResponseErrorCode.EMAIL_PASSWORD_WRONG);
         response.getWriter().write(objectMapper.writeValueAsString(responseDto));
     }
 }

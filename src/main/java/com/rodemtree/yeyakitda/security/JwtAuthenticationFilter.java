@@ -2,6 +2,7 @@ package com.rodemtree.yeyakitda.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rodemtree.yeyakitda.dto.response.ApiResponseDto;
+import com.rodemtree.yeyakitda.dto.response.ResponseErrorCode;
 import com.rodemtree.yeyakitda.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -53,7 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             response.setCharacterEncoding("UTF-8");
 
-            ApiResponseDto<?> responseDto = ApiResponseDto.of(HttpStatus.UNAUTHORIZED.value(), "유효하지 않은 토큰입니다.");
+            ApiResponseDto<?> responseDto = ApiResponseDto.of(ResponseErrorCode.INVALID_TOKEN);
             response.getWriter().write(objectMapper.writeValueAsString(responseDto));
             return;
         }

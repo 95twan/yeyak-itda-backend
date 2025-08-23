@@ -8,11 +8,15 @@ public record ApiResponseDto<T>(
         String message,
         T data
 ) {
-    public static ApiResponseDto<?> of(int status, String message) {
-        return ApiResponseDto.of(status, message, null);
+    public static ApiResponseDto<?> of(ResponseSuccessCode code) {
+        return new ApiResponseDto<> (code.getStatus(), code.getMessage(), null);
     }
 
-    public static <T> ApiResponseDto<T> of(int status, String message, T data) {
-        return new ApiResponseDto<> (status, message, data);
+    public static ApiResponseDto<?> of(ResponseErrorCode code) {
+        return new ApiResponseDto<> (code.getStatus(), code.getMessage(), null);
+    }
+
+    public static <T> ApiResponseDto<T> of(ResponseSuccessCode code, T data) {
+        return new ApiResponseDto<> (code.getStatus(), code.getMessage(), data);
     }
 }
