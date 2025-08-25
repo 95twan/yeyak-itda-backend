@@ -37,6 +37,16 @@ public class RestaurantController {
     ) {
         Page<RestaurantDto> restaurants = restaurantService.searchRestaurants(condition, pageable);
         PagedResponseDto<RestaurantDto> pagedResponseDto = PagedResponseDto.of(restaurants);
+
+        if(restaurants.isEmpty()) {
+            ApiResponseDto<PagedResponseDto<RestaurantDto>> responseDto = new ApiResponseDto<>(
+                    HttpStatus.OK.value(),
+                    "검색 결과가 없습니다.",
+                    pagedResponseDto
+            );
+            return ResponseEntity.status(HttpStatus.OK).body(responseDto);
+        }
+
         ApiResponseDto<PagedResponseDto<RestaurantDto>> responseDto = ApiResponseDto.of(ResponseSuccessCode.RESTAURANTS, pagedResponseDto);
 
         return ResponseEntity.status(HttpStatus.OK).body(responseDto);
