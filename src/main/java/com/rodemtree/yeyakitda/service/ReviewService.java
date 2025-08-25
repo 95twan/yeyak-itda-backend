@@ -1,7 +1,10 @@
 package com.rodemtree.yeyakitda.service;
 
 import com.rodemtree.yeyakitda.dto.ReviewDto;
+import com.rodemtree.yeyakitda.mapper.ReviewMapper;
+import com.rodemtree.yeyakitda.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -10,7 +13,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ReviewService {
 
-    public List<ReviewDto> getTop10LatestReviews(Long restaurantId) {
-        return null;
+    private final ReviewRepository reviewRepository;
+    private final ReviewMapper reviewMapper;
+
+    public List<ReviewDto> findTop10LatestReviews(Long restaurantId) {
+        return reviewRepository.findByRestaurant_IdOrderByCreatedAtDesc(restaurantId, Limit.of(10)).stream()
+                .map(reviewMapper::reviewEntityToReviewDto)
+                .toList();
     }
 }

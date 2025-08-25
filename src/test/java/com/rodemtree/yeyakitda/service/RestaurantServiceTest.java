@@ -39,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
+@DisplayName("비즈니스 로직 - 식당")
 @ExtendWith(MockitoExtension.class)
 class RestaurantServiceTest {
 
@@ -271,7 +272,7 @@ class RestaurantServiceTest {
         ReviewDto review1 = createReveiewDto("테스트 리뷰1");
         ReviewDto review2 = createReveiewDto("테스트 리뷰2");
         List<ReviewDto> reviews = List.of(review1, review2);
-        given(reviewService.getTop10LatestReviews(restaurantId)).willReturn(reviews);
+        given(reviewService.findTop10LatestReviews(restaurantId)).willReturn(reviews);
 
         LocalDate date = LocalDate.now();
 
@@ -280,7 +281,7 @@ class RestaurantServiceTest {
 
         // Then
         then(restaurantRepository).should().findById(restaurantId);
-        then(reviewService).should().getTop10LatestReviews(restaurantId);
+        then(reviewService).should().findTop10LatestReviews(restaurantId);
 
         assertThat(result.reviews()).hasSize(reviews.size());
     }
