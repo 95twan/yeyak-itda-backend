@@ -46,7 +46,7 @@ public class RestaurantService {
         List<MenuEntity> menuEntities = menuRepository.findByRestaurant_Id(restaurantId);
         List<MenuDto> menuDtos = menuMapper.menuEntitiesToMenuDtos(menuEntities);
 
-        List<ReviewDto> reviewDtos = reviewService.getTop10LatestReviews(restaurantId);
+        List<ReviewDto> reviewDtos = reviewService.findTop10LatestReviews(restaurantId);
 
         return new RestaurantDetailDto(restaurantInfoDto, reservationSlotDtos, menuDtos, reviewDtos);
     }
