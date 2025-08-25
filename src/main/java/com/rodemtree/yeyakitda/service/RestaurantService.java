@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -25,6 +26,7 @@ public class RestaurantService {
     private final RestaurantRepository restaurantRepository;
     private final RestaurantImageRepository restaurantImageRepository;
     private final MenuRepository menuRepository;
+    private final ReservationSlotService reservationSlotService;
     private final ReviewService reviewService;
     private final RestaurantMapper restaurantMapper;
     private final MenuMapper menuMapper;
@@ -34,16 +36,18 @@ public class RestaurantService {
         return restaurantEntities.map(restaurantMapper::restaurantEntityToRestaurantDto);
     }
 
-    public RestaurantDetailDto getRestaurantDetail(Long restaurantId) {
+    public RestaurantDetailDto getRestaurantDetail(Long restaurantId, LocalDate date) {
         RestaurantEntity restaurantEntity = restaurantRepository.findById(restaurantId).orElseThrow(EntityNotFoundException::new);
         List<RestaurantImageEntity> restaurantImageEntities = restaurantImageRepository.findByRestaurant_Id(restaurantId);
         RestaurantInfoDto restaurantInfoDto = restaurantMapper.restaurantEntityToRestaurantInfoDto(restaurantEntity, restaurantImageEntities);
+
+        List<ReservationSlotDto> reservationSlotDtos = reservationSlotService.findReservationSlotsByDate(restaurantId, date);
 
         List<MenuEntity> menuEntities = menuRepository.findByRestaurant_Id(restaurantId);
         List<MenuDto> menuDtos = menuMapper.menuEntitiesToMenuDtos(menuEntities);
 
         List<ReviewDto> reviewDtos = reviewService.getTop10LatestReviews(restaurantId);
 
-        return new RestaurantDetailDto(restaurantInfoDto, menuDtos, reviewDtos);
+        return new RestaurantDetailDto(restaurantInfoDto, reservationSlotDtos, menuDtos, reviewDtos);
     }
 }

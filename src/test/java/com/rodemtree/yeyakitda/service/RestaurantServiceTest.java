@@ -1,5 +1,6 @@
 package com.rodemtree.yeyakitda.service;
 
+import com.rodemtree.yeyakitda.dto.ReservationSlotDto;
 import com.rodemtree.yeyakitda.dto.RestaurantDetailDto;
 import com.rodemtree.yeyakitda.dto.RestaurantDto;
 import com.rodemtree.yeyakitda.dto.ReviewDto;
@@ -25,6 +26,8 @@ import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -51,6 +54,9 @@ class RestaurantServiceTest {
     private MenuRepository menuRepository;
 
     @Mock
+    private ReservationSlotService reservationSlotService;
+
+    @Mock
     private ReviewService reviewService;
 
     private final RestaurantMapper restaurantMapper = Mappers.getMapper(RestaurantMapper.class);
@@ -62,6 +68,7 @@ class RestaurantServiceTest {
                 restaurantRepository,
                 restaurantImageRepository,
                 menuRepository,
+                reservationSlotService,
                 reviewService,
                 restaurantMapper,
                 menuMapper
@@ -172,8 +179,10 @@ class RestaurantServiceTest {
         ReflectionTestUtils.setField(restaurantEntity, "id", restaurantId);
         given(restaurantRepository.findById(restaurantId)).willReturn(Optional.of(restaurantEntity));
 
+        LocalDate date = LocalDate.now();
+
         // When
-        RestaurantDetailDto result = restaurantService.getRestaurantDetail(restaurantId);
+        RestaurantDetailDto result = restaurantService.getRestaurantDetail(restaurantId, date);
 
         // Then
         then(restaurantRepository).should().findById(restaurantId);
@@ -189,8 +198,10 @@ class RestaurantServiceTest {
         Long restaurantId = 999L;
         given(restaurantRepository.findById(restaurantId)).willReturn(Optional.empty());
 
+        LocalDate date = LocalDate.now();
+
         // When & Then
-        assertThatThrownBy(() -> restaurantService.getRestaurantDetail(restaurantId))
+        assertThatThrownBy(() -> restaurantService.getRestaurantDetail(restaurantId, date))
                 .isInstanceOf(EntityNotFoundException.class);
 
         then(restaurantRepository).should().findById(restaurantId);
@@ -210,8 +221,10 @@ class RestaurantServiceTest {
         List<RestaurantImageEntity> restaurantImages = List.of(restaurantImage1, restaurantImage2);
         given(restaurantImageRepository.findByRestaurant_Id(restaurantId)).willReturn(restaurantImages);
 
+        LocalDate date = LocalDate.now();
+
         // When
-        RestaurantDetailDto result = restaurantService.getRestaurantDetail(restaurantId);
+        RestaurantDetailDto result = restaurantService.getRestaurantDetail(restaurantId, date);
 
         // Then
         then(restaurantRepository).should().findById(restaurantId);
@@ -234,8 +247,10 @@ class RestaurantServiceTest {
         List<MenuEntity> menus = List.of(menu1, menu2);
         given(menuRepository.findByRestaurant_Id(restaurantId)).willReturn(menus);
 
+        LocalDate date = LocalDate.now();
+
         // When
-        RestaurantDetailDto result = restaurantService.getRestaurantDetail(restaurantId);
+        RestaurantDetailDto result = restaurantService.getRestaurantDetail(restaurantId, date);
 
         // Then
         then(restaurantRepository).should().findById(restaurantId);
@@ -258,14 +273,42 @@ class RestaurantServiceTest {
         List<ReviewDto> reviews = List.of(review1, review2);
         given(reviewService.getTop10LatestReviews(restaurantId)).willReturn(reviews);
 
+        LocalDate date = LocalDate.now();
+
         // When
-        RestaurantDetailDto result = restaurantService.getRestaurantDetail(restaurantId);
+        RestaurantDetailDto result = restaurantService.getRestaurantDetail(restaurantId, date);
 
         // Then
         then(restaurantRepository).should().findById(restaurantId);
         then(reviewService).should().getTop10LatestReviews(restaurantId);
 
         assertThat(result.reviews()).hasSize(reviews.size());
+    }
+
+    @Test
+    @DisplayName("성공 - 식당 Id를 받아 식당을 조회하면 당일 영업시간 내 예약 가능한 ReservationSlot 포함한 식당 DTO를 반환한다.")
+    void getRestaurantDetailWithReservationSlotsTest() {
+        // Given
+        Long restaurantId = 1L;
+        RestaurantEntity restaurantEntity = createRestaurant("테스트 식당");
+        ReflectionTestUtils.setField(restaurantEntity, "id", restaurantId);
+        given(restaurantRepository.findById(restaurantId)).willReturn(Optional.of(restaurantEntity));
+
+        LocalDateTime now = LocalDateTime.now();
+
+        ReservationSlotDto reservationSlot1 = createReservationSlot(now.plusHours(1));
+        ReservationSlotDto reservationSlot2 = createReservationSlot(now.plusHours(2));
+        List<ReservationSlotDto> reservationSlots = List.of(reservationSlot1, reservationSlot2);
+        given(reservationSlotService.findReservationSlotsByDate(restaurantId, now.toLocalDate())).willReturn(reservationSlots);
+
+        // When
+        RestaurantDetailDto result = restaurantService.getRestaurantDetail(restaurantId, now.toLocalDate());
+
+        // Then
+        then(restaurantRepository).should().findById(restaurantId);
+        then(reservationSlotService).should().findReservationSlotsByDate(restaurantId, now.toLocalDate());
+
+        assertThat(result.reservationSlots()).hasSize(reservationSlots.size());
     }
 
     private RestaurantEntity createRestaurant(String name) {
@@ -281,6 +324,14 @@ class RestaurantServiceTest {
 
     private MenuEntity createMenu(RestaurantEntity restaurantEntity, String name) {
         return MenuEntity.of(restaurantEntity, name, null, null, null);
+    }
+
+    private ReservationSlotDto createReservationSlot(LocalDateTime time) {
+        return ReservationSlotDto.builder()
+                .slotId(1L)
+                .time(time)
+                .remainingCapacity(5)
+                .build();
     }
 
     private ReviewDto createReveiewDto(String comment) {
