@@ -27,6 +27,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -143,7 +144,7 @@ class RestaurantControllerTest {
     }
 
     @Test
-    @DisplayName("성공 - 카테고리로 식당 목록을 요청하면 해당 카테고리의 식당 목록을 반환한다.")
+    @DisplayName("성공 - 키워드로 식당 목록을 요청하면 해당 카테고리의 식당 목록을 반환한다.")
     void searchRestaurantsWithKeywordTest() throws Exception {
         // Given
         String exepectedKeyword = "테스트";
@@ -162,7 +163,7 @@ class RestaurantControllerTest {
     }
 
     @Test
-    @DisplayName("성공 - 카테고리로 식당 목록을 요청하면 해당 카테고리의 식당 목록을 반환한다.")
+    @DisplayName("성공 - 카테고리와 키워드로 식당 목록을 요청하면 해당 카테고리의 식당 목록을 반환한다.")
     void searchRestaurantsWithCategoriesAndKeywordTest() throws Exception {
         // Given
         String exepectedKeyword = "테스트";
@@ -183,6 +184,23 @@ class RestaurantControllerTest {
         assertThat(keyword).isEqualTo(exepectedKeyword);
         Set<String> categories = captor.getValue().categories();
         assertThat(categories).isEqualTo(expectedCategories);
+    }
+
+    @Test
+    @DisplayName("실패 - 검색 조건에 맞는 식당 목록이 없는 경우 빈 리스트의 content와 200 OK를 반환한다.")
+    void searchRestaurantsNotExistTest() throws Exception {
+        // Given
+        String exepectedKeyword = "테스트";
+        RestaurantSearchConditionDto condition = RestaurantSearchConditionDto.builder().keyword(exepectedKeyword).build();
+        given(restaurantService.searchRestaurants(eq(condition), any(Pageable.class))).willReturn(Page.empty());
+
+        // When & Then
+        mockMvc.perform(get("/api/restaurants")
+                        .param("keyword", exepectedKeyword))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("검색 결과가 없습니다."))
+                .andExpect(jsonPath("$.data.content").value(empty()))
+                .andExpect(jsonPath("$.data.pageInfo.totalElements").value(0));
     }
 
     @Test
