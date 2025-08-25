@@ -86,7 +86,7 @@ public class LoginAuthenticationFilter extends UsernamePasswordAuthenticationFil
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
 
-        ApiResponseDto<?> responseDto = ApiResponseDto.of(ResponseErrorCode.EMAIL_PASSWORD_WRONG);
+        ApiResponseDto<?> responseDto = ApiResponseDto.of(ResponseErrorCode.INVALID_EMAIL_PASSWORD);
         response.getWriter().write(objectMapper.writeValueAsString(responseDto));
     }
 }

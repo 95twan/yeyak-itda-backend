@@ -8,6 +8,7 @@ import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -56,6 +57,19 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponseDto<?>> handleAccessDeniedException(AccessDeniedException e) {
         ApiResponseDto<?> responseDto = ApiResponseDto.of(ResponseErrorCode.ACCESS_DENIED);
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(responseDto);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponseDto<?>> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
+        String errorMessage = e.getParameterName() + " : " + "필수 입력 파라미터입니다.";
+        ApiResponseDto<?> responseDto = ApiResponseDto.of(HttpStatus.BAD_REQUEST.value(), errorMessage);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseDto);
+    }
+
+    @ExceptionHandler(InvalidRequestException.class)
+    public ResponseEntity<ApiResponseDto<?>> handleInvalidRequestException(InvalidRequestException e) {
+        ApiResponseDto<?> responseDto = ApiResponseDto.of(e.getResponseErrorCode());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseDto);
     }
 
     @ExceptionHandler(Exception.class)

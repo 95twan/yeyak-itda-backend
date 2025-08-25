@@ -5,16 +5,22 @@ import com.rodemtree.yeyakitda.dto.RestaurantDto;
 import com.rodemtree.yeyakitda.dto.request.RestaurantSearchConditionDto;
 import com.rodemtree.yeyakitda.dto.response.ApiResponseDto;
 import com.rodemtree.yeyakitda.dto.response.PagedResponseDto;
+import com.rodemtree.yeyakitda.dto.response.ResponseErrorCode;
 import com.rodemtree.yeyakitda.dto.response.ResponseSuccessCode;
+import com.rodemtree.yeyakitda.exception.InvalidRequestException;
 import com.rodemtree.yeyakitda.service.RestaurantService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.Clock;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/restaurants")
@@ -22,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 public class RestaurantController {
 
     private final RestaurantService restaurantService;
+    private final Clock clock;
 
     @GetMapping
     public ResponseEntity<ApiResponseDto<PagedResponseDto<RestaurantDto>>> searchRestaurants(
@@ -36,8 +43,17 @@ public class RestaurantController {
     }
 
     @GetMapping("/{restaurantId}")
-    public ResponseEntity<ApiResponseDto<RestaurantDetailDto>> getRestaurantDetail(@PathVariable Long restaurantId) {
-        RestaurantDetailDto restaurantDetailDto = restaurantService.getRestaurantDetail(restaurantId);
+    public ResponseEntity<ApiResponseDto<RestaurantDetailDto>> getRestaurantDetail(
+            @PathVariable Long restaurantId,
+            @RequestParam(required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        LocalDate now = LocalDate.now(clock);
+
+        if (date.isBefore(now)) {
+            throw new InvalidRequestException(ResponseErrorCode.INVALID_PAST_DATE);
+        }
+
+        RestaurantDetailDto restaurantDetailDto = restaurantService.getRestaurantDetail(restaurantId, date);
         ApiResponseDto<RestaurantDetailDto> responseDto = ApiResponseDto.of(ResponseSuccessCode.RESTAURANT, restaurantDetailDto);
         return ResponseEntity.status(HttpStatus.OK).body(responseDto);
     }

@@ -1,16 +1,12 @@
 package com.rodemtree.yeyakitda.controller;
 
 import com.rodemtree.yeyakitda.config.TestSecurityConfig;
-import com.rodemtree.yeyakitda.dto.MenuDto;
-import com.rodemtree.yeyakitda.dto.RestaurantDetailDto;
-import com.rodemtree.yeyakitda.dto.RestaurantInfoDto;
-import com.rodemtree.yeyakitda.dto.ReviewDto;
+import com.rodemtree.yeyakitda.dto.*;
 import com.rodemtree.yeyakitda.dto.request.RestaurantSearchConditionDto;
 import com.rodemtree.yeyakitda.dto.response.ResponseErrorCode;
 import com.rodemtree.yeyakitda.entity.RestaurantEntity;
 import com.rodemtree.yeyakitda.service.RestaurantService;
 import jakarta.persistence.EntityNotFoundException;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -24,14 +20,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -45,6 +45,9 @@ class RestaurantControllerTest {
 
     @MockitoBean
     private RestaurantService restaurantService;
+
+    @MockitoBean
+    private Clock clock;
 
     @Test
     @DisplayName("성공 - 식당 목록을 요청하면 기본 페이징(0페이지, 12개)된 식당 목록을 반환한다.")
@@ -188,16 +191,23 @@ class RestaurantControllerTest {
         // Given
         Long restaurantId = 1L;
         RestaurantDetailDto restaurantDetailDto = createRestaurantDetailDto(restaurantId);
-        given(restaurantService.getRestaurantDetail(restaurantId)).willReturn(restaurantDetailDto);
+        given(restaurantService.getRestaurantDetail(eq(restaurantId), any())).willReturn(restaurantDetailDto);
+
+        ZoneId seoulZone = ZoneId.of("Asia/Seoul");
+        Instant fixedInstant = LocalDate.of(2025, 8, 25).atStartOfDay(seoulZone).toInstant();
+        given(clock.instant()).willReturn(fixedInstant);
+        given(clock.getZone()).willReturn(seoulZone);
 
         // When & Then
-        mockMvc.perform(get("/api/restaurants/" + restaurantId))
+        mockMvc.perform(get("/api/restaurants/" + restaurantId)
+                        .param("date", "2025-08-26"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.restaurant").isNotEmpty())
+                .andExpect(jsonPath("$.data.reservationSlots").isArray())
                 .andExpect(jsonPath("$.data.menus").isArray())
                 .andExpect(jsonPath("$.data.reviews").isArray());
 
-        then(restaurantService).should().getRestaurantDetail(restaurantId);
+        then(restaurantService).should().getRestaurantDetail(eq(restaurantId), any());
     }
 
     @Test
@@ -205,21 +215,61 @@ class RestaurantControllerTest {
     void getRestaurantDetailWithNotExistRestaurantId() throws Exception {
         // Given
         Long restaurantId = 999L;
-        given(restaurantService.getRestaurantDetail(restaurantId)).willThrow(new EntityNotFoundException());
+        given(restaurantService.getRestaurantDetail(eq(restaurantId), any())).willThrow(new EntityNotFoundException());
+
+        ZoneId seoulZone = ZoneId.of("Asia/Seoul");
+        Instant fixedInstant = LocalDate.of(2025, 8, 25).atStartOfDay(seoulZone).toInstant();
+        given(clock.instant()).willReturn(fixedInstant);
+        given(clock.getZone()).willReturn(seoulZone);
 
         // When & Then
-        mockMvc.perform(get("/api/restaurants/" + restaurantId))
+        mockMvc.perform(get("/api/restaurants/" + restaurantId)
+                        .param("date", "2025-08-26"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(ResponseErrorCode.RESOURCE_NOT_FOUND.getStatus()))
                 .andExpect(jsonPath("$.message").value(ResponseErrorCode.RESOURCE_NOT_FOUND.getMessage()));
 
-        then(restaurantService).should().getRestaurantDetail(restaurantId);
+        then(restaurantService).should().getRestaurantDetail(eq(restaurantId), any());
+    }
+
+    @Test
+    @DisplayName("실패 - date 파라미터가 없으면, 400 BadReqeust를 응답한다.")
+    void getRestaurantDetailWithoutDate() throws Exception {
+        // Given
+        Long restaurantId = 1L;
+
+        // When & Then
+        mockMvc.perform(get("/api/restaurants/" + restaurantId))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(containsString("date")));
+
+        then(restaurantService).should(never()).getRestaurantDetail(eq(restaurantId), any());
+    }
+
+    @Test
+    @DisplayName("실패 - 과거 날짜로 상세 조회를 요청하면, 400 BadReqeust를 응답한다.")
+    void getRestaurantDetailWithPastDate() throws Exception {
+        // Given
+        Long restaurantId = 1L;
+
+        ZoneId seoulZone = ZoneId.of("Asia/Seoul");
+        Instant fixedInstant = LocalDate.of(2025, 8, 25).atStartOfDay(seoulZone).toInstant();
+        given(clock.instant()).willReturn(fixedInstant);
+        given(clock.getZone()).willReturn(seoulZone);
+
+        // When & Then
+        mockMvc.perform(get("/api/restaurants/" + restaurantId)
+                        .param("date", "2025-08-24"))
+                .andExpect(status().isBadRequest());
+
+        then(restaurantService).should(never()).getRestaurantDetail(eq(restaurantId), any());
     }
 
     private RestaurantDetailDto createRestaurantDetailDto(Long id) {
         RestaurantInfoDto info = new RestaurantInfoDto(id, 1L, "테스트 식당", List.of(), "설명", List.of(), "주소", "한식", "010-1234-5678", 4.5f, List.of());
+        List<ReservationSlotDto> reservationSlots = List.of(new ReservationSlotDto(1L, LocalDateTime.now(), 3));
         List<MenuDto> menus = List.of(new MenuDto(1L, "메뉴1", "설명1", 10000, "https://example.com/menu1.jpg"));
         List<ReviewDto> reviews = List.of(new ReviewDto(1L, 1L, "닉네임", List.of(), "코멘트", 5.0f));
-        return new RestaurantDetailDto(info, menus, reviews);
+        return new RestaurantDetailDto(info, reservationSlots, menus, reviews);
     }
 }
