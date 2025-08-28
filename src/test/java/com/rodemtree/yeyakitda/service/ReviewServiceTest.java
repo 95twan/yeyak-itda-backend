@@ -10,7 +10,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Limit;
@@ -30,7 +29,7 @@ class ReviewServiceTest {
     @Mock
     private ReviewRepository reviewRepository;
 
-    private ReviewMapper reviewMapper = Mappers.getMapper(ReviewMapper.class);
+    private final ReviewMapper reviewMapper = Mappers.getMapper(ReviewMapper.class);
 
     @BeforeEach
     public void setUp() {
