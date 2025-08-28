@@ -7,5 +7,5 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface ReservationSlotRepository extends JpaRepository<ReservationSlotEntity, Long> {
-    List<ReservationSlotEntity> findByRestaurant_IdAndSlotAtBetween(Long restaurantId, LocalDateTime slotAtAfter, LocalDateTime slotAtBefore);
+    List<ReservationSlotEntity> findByRestaurant_IdAndSlotAtGreaterThanEqualAndSlotAtLessThan(Long restaurantId, LocalDateTime startDateTime, LocalDateTime endDateTime);
 }
