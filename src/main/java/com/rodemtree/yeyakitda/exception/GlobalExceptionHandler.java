@@ -72,6 +72,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseDto);
     }
 
+    @ExceptionHandler(ReservationException.class)
+    public ResponseEntity<ApiResponseDto<?>> handleReservationException(ReservationException e) {
+        ApiResponseDto<?> responseDto = ApiResponseDto.of(HttpStatus.CONFLICT.value(), e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(responseDto);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponseDto<?>> handleException(Exception e) {
         ApiResponseDto<?> responseDto = ApiResponseDto.of(ResponseErrorCode.INTERNAL_SEVER_ERROR);
