@@ -11,7 +11,9 @@ public enum ResponseSuccessCode {
     RESTAURANTS(HttpStatus.OK.value(), "성공적으로 식당 목록을 조회했습니다."),
     RESTAURANT(HttpStatus.OK.value(), "성공적으로 식당을 조회했습니다."),
 
-    REISSUE_TOKEN(HttpStatus.OK.value(), "AccessToken이 성공적으로 발급되었습니다.");
+    REISSUE_TOKEN(HttpStatus.OK.value(), "AccessToken이 성공적으로 발급되었습니다."),
+
+    RESERVATION_CREATE(HttpStatus.CREATED.value(), "성공적으로 예약이 완료되었습니다.");
 
 
     @Getter

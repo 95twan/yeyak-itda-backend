@@ -1,0 +1,43 @@
+package com.rodemtree.yeyakitda.service;
+
+import com.rodemtree.yeyakitda.dto.request.ReservationRequestDto;
+import com.rodemtree.yeyakitda.entity.ReservationEntity;
+import com.rodemtree.yeyakitda.entity.ReservationSlotEntity;
+import com.rodemtree.yeyakitda.entity.UserEntity;
+import com.rodemtree.yeyakitda.exception.ReservationException;
+import com.rodemtree.yeyakitda.repository.ReservationRepository;
+import com.rodemtree.yeyakitda.repository.ReservationSlotRepository;
+import com.rodemtree.yeyakitda.repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class ReservationService {
+
+    private final UserRepository userRepository;
+    private final ReservationRepository reservationRepository;
+    private final ReservationSlotRepository reservationSlotRepository;
+
+
+    @Transactional
+    public void createReservation(String userEmail, ReservationRequestDto reservationRequestDto) {
+        UserEntity userEntity = userRepository.findByEmail(userEmail).orElseThrow(() -> new EntityNotFoundException("유저를 찾을 수 없습니다."));
+        ReservationSlotEntity reservationSlotEntity = reservationSlotRepository.findById(reservationRequestDto.slotId()).orElseThrow(() -> new EntityNotFoundException("해당하는 예약 슬롯을 찾을 수 없습니다."));
+        if (reservationSlotEntity.isPossibleToReserve(reservationRequestDto.headCount())) {
+            reservationSlotEntity.addReservedCapacity(reservationRequestDto.headCount());
+        } else {
+            throw new ReservationException("예약 가능한 인원을 초과했습니다.");
+        }
+        ReservationEntity reservationEntity = ReservationEntity.builder()
+                .user(userEntity)
+                .restaurant(reservationSlotEntity.getRestaurant())
+                .reservationSlot(reservationSlotEntity)
+                .headCount(reservationRequestDto.headCount())
+                .build();
+        reservationEntity.setDefaultStatus();
+        reservationRepository.save(reservationEntity);
+    }
+}
