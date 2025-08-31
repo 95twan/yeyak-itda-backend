@@ -1,12 +1,16 @@
 package com.rodemtree.yeyakitda.controller;
 
 import com.rodemtree.yeyakitda.dto.request.ReissueTokenRequestDto;
+import com.rodemtree.yeyakitda.dto.request.SignUpRequestDto;
 import com.rodemtree.yeyakitda.dto.response.ApiResponseDto;
 import com.rodemtree.yeyakitda.dto.LoginSuccessDto;
 import com.rodemtree.yeyakitda.dto.response.ResponseSuccessCode;
 import com.rodemtree.yeyakitda.security.CustomUserDetails;
 import com.rodemtree.yeyakitda.service.AuthService;
+import com.rodemtree.yeyakitda.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +21,16 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserService userService;
+
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponseDto<?>> signUp(@Valid @RequestBody SignUpRequestDto dto) {
+        userService.signUp(dto);
+
+        ApiResponseDto<?> responseDto = ApiResponseDto.of(ResponseSuccessCode.SIGNUP);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
+    }
 
     @DeleteMapping("/logout")
     public ResponseEntity<ApiResponseDto<?>> logout(@AuthenticationPrincipal CustomUserDetails customUserDetails) {

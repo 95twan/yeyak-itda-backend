@@ -4,14 +4,20 @@ package com.rodemtree.yeyakitda.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import com.rodemtree.yeyakitda.dto.request.LoginRequestDto;
+import com.rodemtree.yeyakitda.dto.request.SignUpRequestDto;
 import com.rodemtree.yeyakitda.dto.response.ResponseErrorCode;
 import com.rodemtree.yeyakitda.entity.RefreshTokenEntity;
 import com.rodemtree.yeyakitda.entity.UserEntity;
+import com.rodemtree.yeyakitda.exception.DuplicateException;
 import com.rodemtree.yeyakitda.repository.RefreshTokenRepository;
 import com.rodemtree.yeyakitda.repository.UserRepository;
+import com.rodemtree.yeyakitda.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -28,10 +34,14 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.given;
+import static org.hamcrest.Matchers.containsString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -61,6 +71,9 @@ class AuthControllerTest {
     @MockitoBean
     private Clock clock;
 
+    @MockitoBean
+    private UserService userService;
+
 
     @BeforeEach
     void setUp() {
@@ -78,6 +91,94 @@ class AuthControllerTest {
         userRepository.save(user);
 
         given(clock.instant()).willReturn(Instant.now());
+    }
+
+    @Test
+    @DisplayName("성공 - 정상적인 회원가입 요청 시, 201 Created 상태 코드를 응답한다.")
+    void signUpTest() throws Exception {
+        // Given
+        SignUpRequestDto dto = createSignUpRequestDto();
+        willDoNothing().given(userService).signUp(any());
+        int expectedStatus = HttpStatus.CREATED.value();
+        String expectedMessage = "성공적으로 회원가입 되었습니다.";
+
+        // When & Then
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto))
+                )
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value(expectedStatus))
+                .andExpect(jsonPath("$.message").value(expectedMessage))
+                .andExpect(jsonPath("$.data").doesNotExist());
+
+        then(userService).should().signUp(any());
+    }
+
+    @Test
+    @DisplayName("실패 - 중복된 이메일, 닉네임, 전화번호로 회원가입 요청 시, 409 Conflict 상태 코드를 응답한다.")
+    void signUpWithDuplicateFieldsTest() throws Exception {
+        // Given
+        SignUpRequestDto dto = createSignUpRequestDto();
+        List<DuplicateException.Field> fields = List.of(DuplicateException.Field.EMAIL, DuplicateException.Field.NICKNAME, DuplicateException.Field.PHONE_NUMBER);
+        willThrow(new DuplicateException(fields)).given(userService).signUp(any());
+
+        // When & Then
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto))
+                )
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(HttpStatus.CONFLICT.value()))
+                .andExpect(jsonPath("$.message").value(containsString(DuplicateException.Field.EMAIL.getDescription())))
+                .andExpect(jsonPath("$.message").value(containsString(DuplicateException.Field.PHONE_NUMBER.getDescription())))
+                .andExpect(jsonPath("$.message").value(containsString(DuplicateException.Field.NICKNAME.getDescription())));
+
+        then(userService).should().signUp(any());
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidSignUpRequests")
+    @DisplayName("실패 - 유효하지 않은 데이터로 회원가입을 요청하면, 400 Bad Request를 응답한다.")
+    void signUpWithInvalidDataTest(SignUpRequestDto invalidDto) throws Exception {
+        // Given
+
+        // When & Then
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(invalidDto))
+        ).andExpect(status().isBadRequest());
+
+        then(userService).should(never()).signUp(any());
+
+    }
+
+    static Stream<Arguments> invalidSignUpRequests() {
+        return Stream.of(
+                Arguments.of(new SignUpRequestDto("홍길동", "  ", "pw123!", "닉", "주소", "010-1234-1234")), // 이메일 공백
+                Arguments.of(new SignUpRequestDto("홍길동", "invalid-email", "pw123!", "닉", "주소", "010-1234-1234")), // 이메일 형식 오류
+                Arguments.of(new SignUpRequestDto(null, "test@test.com", "pw123!", "닉", "주소", "010-1234-1234")), // 이름 null
+                Arguments.of(new SignUpRequestDto("", "test@test.com", "pw123!", "닉", "주소", "010-1234-1234")) // 이름 ""
+        );
+    }
+
+    @Test
+    @DisplayName("실패 - 비어있는 이름으로 회원가입을 요청하면, 400 Bad Request와 에러 메시지를 응답한다.")
+    void signUpWithBlankNameTest() throws Exception {
+        // Given
+        // 이름만 비어있는 DTO 생성
+        SignUpRequestDto dto = new SignUpRequestDto("", "test@test.com", "pw123!", "닉네임", "주소", "010-1234-1234");
+
+        // When & Then
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto))
+                )
+                .andExpect(status().isBadRequest()) // 1. HTTP 상태 코드가 400인지 확인
+                .andExpect(jsonPath("$.status").value(HttpStatus.BAD_REQUEST.value())) // 2. 응답 DTO의 status 필드 확인
+                .andExpect(jsonPath("$.message").value(containsString("name : 이름은 필수 입력 항목입니다."))); // 3. 우리가 만들 "규칙"에 맞는 메시지가 오는지 확인
+
+        then(userService).should(never()).signUp(any());
     }
 
     @Test
@@ -296,5 +397,9 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.message").value(ResponseErrorCode.INVALID_TOKEN.getMessage()))
                 .andReturn().getResponse().getContentAsString();
 
+    }
+
+    private SignUpRequestDto createSignUpRequestDto() {
+        return SignUpRequestDto.of("김태완", "test@test.com", "test1234!", "rodem", "경기도 구리시", "010-1234-5678");
     }
 }
