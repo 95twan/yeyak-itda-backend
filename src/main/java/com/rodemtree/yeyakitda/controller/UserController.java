@@ -17,12 +17,5 @@ public class UserController {
 
     private final UserService userService;
 
-    @PostMapping
-    public ResponseEntity<ApiResponseDto<?>> signUp(@Valid @RequestBody SignUpRequestDto dto) {
-        userService.signUp(dto);
 
-        ApiResponseDto<?> responseDto = ApiResponseDto.of(ResponseSuccessCode.SIGNUP);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
-    }
 }
