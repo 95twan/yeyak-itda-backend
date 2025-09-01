@@ -1,10 +1,13 @@
 package com.rodemtree.yeyakitda.service;
 
+import com.rodemtree.yeyakitda.dto.ReservationDto;
 import com.rodemtree.yeyakitda.dto.UserInfoDto;
 import com.rodemtree.yeyakitda.dto.request.SignUpRequestDto;
-import com.rodemtree.yeyakitda.entity.UserEntity;
+import com.rodemtree.yeyakitda.entity.*;
 import com.rodemtree.yeyakitda.exception.DuplicateException;
+import com.rodemtree.yeyakitda.mapper.ReservationMapper;
 import com.rodemtree.yeyakitda.mapper.UserMapper;
+import com.rodemtree.yeyakitda.repository.ReservationRepository;
 import com.rodemtree.yeyakitda.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +19,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,13 +42,17 @@ class UserServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private ReservationRepository reservationRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     private final UserMapper userMapper = Mappers.getMapper(UserMapper.class);
+    private final ReservationMapper reservationMapper = Mappers.getMapper(ReservationMapper.class);
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepository, passwordEncoder, userMapper);
+        userService = new UserService(userRepository, reservationRepository, passwordEncoder, userMapper, reservationMapper);
     }
 
     @Test
@@ -152,11 +162,71 @@ class UserServiceTest {
         then(userRepository).should().findByEmail(nonExistentEmail);
     }
 
+    @Test
+    @DisplayName("성공 - 사용자 이메일로 예약 목록을 조회하면, 해당 사용자의 예약 DTO 목록을 반환한다.")
+    void getUserReservationsTest() {
+        // Given
+        String userEmail = "test@test.com";
+        UserEntity userEntity = createUserEntity(userEmail);
+
+        RestaurantEntity restaurant1 = createRestaurant(1L, "김밥천국");
+        RestaurantEntity restaurant2 = createRestaurant(2L, "돈까스의 정석");
+
+        ReservationSlotEntity slot1 = createReservationSlot(restaurant1, LocalDateTime.of(2025, 9, 2, 12, 30));
+        ReservationSlotEntity slot2 = createReservationSlot(restaurant2, LocalDateTime.of(2025, 9, 5, 19, 0));
+
+        List<ReservationEntity> reservations = List.of(
+                createReservation(101L, userEntity, slot1, 2, ReservationStatus.WAITING),
+                createReservation(102L, userEntity, slot2, 4, ReservationStatus.RESERVED)
+        );
+
+        given(reservationRepository.findByUser_Email(userEmail)).willReturn(reservations);
+
+        // When
+        List<ReservationDto> result = userService.getUserReservations(userEmail);
+
+        // Then
+        then(reservationRepository).should().findByUser_Email(userEmail);
+        assertThat(result).hasSize(2);
+
+        assertThat(result.get(0).reservationId()).isEqualTo(101L);
+        assertThat(result.get(0).restaurantName()).isEqualTo("김밥천국");
+        assertThat(result.get(0).status()).isEqualTo(ReservationStatus.WAITING.getValue());
+
+        assertThat(result.get(1).reservationId()).isEqualTo(102L);
+        assertThat(result.get(1).restaurantName()).isEqualTo("돈까스의 정석");
+        assertThat(result.get(1).headCount()).isEqualTo(4);
+
+    }
+
+    private ReservationSlotEntity createReservationSlot(RestaurantEntity restaurant, LocalDateTime time) {
+        return ReservationSlotEntity.of(restaurant, time, 10, 0);
+    }
+
 
     private UserEntity createUserEntity(String userEmail) {
         return UserEntity.builder()
                 .email(userEmail)
                 .build();
+    }
+
+    private RestaurantEntity createRestaurant(Long id, String name) {
+        RestaurantEntity restaurant = RestaurantEntity.builder().name(name).build();
+        // ReflectionTestUtils를 사용해 private 필드인 id에 값을 설정합니다.
+        ReflectionTestUtils.setField(restaurant, "id", id);
+        return restaurant;
+    }
+
+    private ReservationEntity createReservation(Long id, UserEntity user, ReservationSlotEntity slot, int headCount, ReservationStatus status) {
+        ReservationEntity reservation = ReservationEntity.builder()
+                .user(user)
+                .restaurant(slot.getRestaurant())
+                .reservationSlot(slot)
+                .headCount(headCount)
+                .build();
+        ReflectionTestUtils.setField(reservation, "status", status);
+        ReflectionTestUtils.setField(reservation, "id", id);
+        return reservation;
     }
 
     private SignUpRequestDto createSignUpRequestDto() {
