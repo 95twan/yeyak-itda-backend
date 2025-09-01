@@ -14,7 +14,8 @@ public enum ResponseSuccessCode {
     REISSUE_TOKEN(HttpStatus.OK.value(), "AccessToken이 성공적으로 발급되었습니다."),
 
     RESERVATION_CREATE(HttpStatus.CREATED.value(), "성공적으로 예약이 완료되었습니다."),
-    USER_INFO(HttpStatus.OK.value(), "성공적으로 사용자 정보를 조회했습니다.");
+    USER_INFO(HttpStatus.OK.value(), "성공적으로 사용자 정보를 조회했습니다."),
+    RESERVATION_INFO(HttpStatus.OK.value(), "성공적으로 사용자 예약 정보를 조회했습니다.");
 
 
     @Getter
