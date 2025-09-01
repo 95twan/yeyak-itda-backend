@@ -267,7 +267,7 @@ class AuthControllerTest {
 
     @RestController
     static class TestController {
-        @GetMapping("/api/users/me")
+        @GetMapping("/api/auth/test")
         public String getMyInfo() {
             return "This is a secured endpoint for testing.";
         }
@@ -285,7 +285,7 @@ class AuthControllerTest {
         String accessToken = JsonPath.read(responseBody, "$.data.accessToken");
 
         // When & Then
-        mockMvc.perform(get("/api/users/me")
+        mockMvc.perform(get("/api/auth/test")
                         .header("Authorization", "Bearer " + accessToken)
                 )
                 .andExpect(status().isOk());
@@ -298,7 +298,7 @@ class AuthControllerTest {
         String invalidAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid-token-payload.invalid-signature";
 
         // When & Then
-        mockMvc.perform(get("/api/users/me")
+        mockMvc.perform(get("/api/auth/test")
                         .header("Authorization", "Bearer " + invalidAccessToken)
                 )
                 .andExpect(status().isUnauthorized());
@@ -310,7 +310,7 @@ class AuthControllerTest {
         // Given
 
         // When & Then
-        mockMvc.perform(get("/api/users/me"))
+        mockMvc.perform(get("/api/auth/test"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -325,7 +325,7 @@ class AuthControllerTest {
         ).andReturn().getResponse().getContentAsString();
         String refreshToken = JsonPath.read(responseBody, "$.data.refreshToken");
         // When & Then
-        mockMvc.perform(get("/api/users/me")
+        mockMvc.perform(get("/api/auth/test")
                         .header("Authorization", "Bearer " + refreshToken))
                 .andExpect(status().isUnauthorized());
     }
