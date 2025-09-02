@@ -11,6 +11,6 @@ public record ReviewDto(
         String userNickname,
         List<String> imageUrls,
         String comment,
-        Float rating
+        Integer rating
 ) {
 }

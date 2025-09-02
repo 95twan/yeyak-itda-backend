@@ -1,6 +1,8 @@
 package com.rodemtree.yeyakitda.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -25,17 +27,19 @@ public class ReviewEntity extends BaseEntity {
     @Column(name = "comment", length = 1000, nullable = false)
     private String comment;
 
+    @Min(1)
+    @Max(5)
     @Column(name = "rating", nullable = false)
-    private Float rating = 0f;
+    private Integer rating = 0;
 
-    private ReviewEntity(RestaurantEntity restaurant, UserEntity user, String comment, Float rating) {
+    private ReviewEntity(RestaurantEntity restaurant, UserEntity user, String comment, Integer rating) {
         this.restaurant = restaurant;
         this.user = user;
         this.comment = comment;
         this.rating = rating;
     }
 
-    public static ReviewEntity of(RestaurantEntity restaurant, UserEntity user, String comment, Float rating) {
+    public static ReviewEntity of(RestaurantEntity restaurant, UserEntity user, String comment, Integer rating) {
         return new ReviewEntity(restaurant, user, comment, rating);
     }
 }

@@ -42,8 +42,8 @@ class ReviewServiceTest {
         // Given
         Long restaurantId = 1L;
         Limit limit = Limit.of(10);
-        ReviewEntity reviewEntity1 = createReviewEntity("테스트 리뷰1", 5.0f);
-        ReviewEntity reviewEntity2 = createReviewEntity("테스트 리뷰2", 4.0f);
+        ReviewEntity reviewEntity1 = createReviewEntity("테스트 리뷰1", 5);
+        ReviewEntity reviewEntity2 = createReviewEntity("테스트 리뷰2", 4);
         List<ReviewEntity> reviewEntities = List.of(reviewEntity1, reviewEntity2);
         given(reviewRepository.findByRestaurant_IdOrderByCreatedAtDesc(restaurantId, limit)).willReturn(reviewEntities);
 
@@ -57,7 +57,7 @@ class ReviewServiceTest {
 
     }
 
-    private ReviewEntity createReviewEntity(String comment, Float rating) {
+    private ReviewEntity createReviewEntity(String comment, Integer rating) {
         return ReviewEntity.of(null, null, comment, rating);
     }
 }
