@@ -8,10 +8,7 @@ import com.rodemtree.yeyakitda.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -29,5 +26,16 @@ public class ReservationController {
         reservationService.createReservation(userEmail, reservationRequestDto);
         ApiResponseDto<?> responseDto = ApiResponseDto.of(ResponseSuccessCode.RESERVATION_CREATE);
         return ResponseEntity.status(201).body(responseDto);
+    }
+
+    @DeleteMapping("/{reservationId}")
+    public ResponseEntity<ApiResponseDto<?>> cancelReservation(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long reservationId
+    ) {
+        String userEmail = userDetails.getUsername();
+        reservationService.cancelReservation(userEmail, reservationId);
+        ApiResponseDto<?> responseDto = ApiResponseDto.of(ResponseSuccessCode.RESERVATION_CANCEL);
+        return ResponseEntity.ok(responseDto);
     }
 }

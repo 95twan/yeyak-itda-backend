@@ -10,6 +10,7 @@ import com.rodemtree.yeyakitda.repository.ReservationSlotRepository;
 import com.rodemtree.yeyakitda.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,5 +40,19 @@ public class ReservationService {
                 .build();
         reservationEntity.setDefaultStatus();
         reservationRepository.save(reservationEntity);
+    }
+
+    @Transactional
+    public void cancelReservation(String userEmail, Long reservationId) {
+        ReservationEntity reservationEntity = reservationRepository.findById(reservationId).orElseThrow(() -> new EntityNotFoundException("해당 예약을 찾을 수 없습니다."));
+
+        String reservationOwnerEmail = reservationEntity.getUser().getEmail();
+
+        if (!reservationOwnerEmail.equals(userEmail)) throw new AccessDeniedException("예약을 취소할 권한이 없습니다.");
+
+        reservationEntity.cancel();
+
+        ReservationSlotEntity reservationSlotEntity = reservationEntity.getReservationSlot();
+        reservationSlotEntity.removeReservedCapacity(reservationEntity.getHeadCount());
     }
 }

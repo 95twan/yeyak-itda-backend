@@ -1,10 +1,7 @@
 package com.rodemtree.yeyakitda.service;
 
 import com.rodemtree.yeyakitda.dto.request.ReservationRequestDto;
-import com.rodemtree.yeyakitda.entity.ReservationEntity;
-import com.rodemtree.yeyakitda.entity.ReservationSlotEntity;
-import com.rodemtree.yeyakitda.entity.RestaurantEntity;
-import com.rodemtree.yeyakitda.entity.UserEntity;
+import com.rodemtree.yeyakitda.entity.*;
 import com.rodemtree.yeyakitda.exception.ReservationException;
 import com.rodemtree.yeyakitda.repository.ReservationRepository;
 import com.rodemtree.yeyakitda.repository.ReservationSlotRepository;
@@ -17,6 +14,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
@@ -141,8 +139,87 @@ class ReservationServiceTest {
         then(reservationRepository).should(never()).save(any());
     }
 
+    @Test
+    @DisplayName("성공 - 자신의 예약을 취소하면, 예약 상태가 CANCELLED로 변경되고 슬롯의 예약된 인원이 감소한다.")
+    void cancelReservationTest() {
+        // Given
+        String userEmail = "test@test.com";
+        Long reservationId = 1L;
+        int headCount = 2;
+        int initialReservedCapacity = 5;
+        
+        UserEntity user = createUser(userEmail);
+        RestaurantEntity restaurant = createRestaurant(1L, "테스트 식당");
+        ReservationSlotEntity slot = createReservationSlot(restaurant, 10, initialReservedCapacity);
+
+        ReservationEntity reservation = createReservation(reservationId, user, slot, headCount, ReservationStatus.RESERVED);
+
+        given(reservationRepository.findById(reservationId)).willReturn(Optional.of(reservation));
+
+        // When
+        reservationService.cancelReservation(userEmail, reservationId);
+
+        // Then
+        assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
+
+        assertThat(slot.getReservedCapacity()).isEqualTo(initialReservedCapacity - headCount);
+    }
+
+    @Test
+    @DisplayName("실패 - 다른 사용자의 예약을 취소하려고 하면, AccessDeniedException 예외가 발생한다.")
+    void cancelReservationWithNoPermissionTest() {
+        // Given
+        String userEmail = "test@test.com";
+        String otherUserEmail = "other@test.com";
+        Long reservationId = 1L;
+
+        UserEntity user = createUser(userEmail);
+        ReservationEntity reservation = createReservation(reservationId, user, createReservationSlot(), 2, ReservationStatus.RESERVED);
+
+        given(reservationRepository.findById(reservationId)).willReturn(Optional.of(reservation));
+
+        // When & Then
+        assertThatThrownBy(() -> reservationService.cancelReservation(otherUserEmail, reservationId))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("예약을 취소할 권한이 없습니다.");
+
+        assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.RESERVED);
+    }
+
+    @Test
+    @DisplayName("실패 - 존재하지 않는 예약 ID로 취소를 시도하면, EntityNotFoundException 예외가 발생한다.")
+    void cancelReservationWithNonExistentIdTest() {
+        // Given
+        String userEmail = "test@test.com";
+        Long nonExistentReservationId = 999L;
+
+        // reservationId로 조회 시 Optional.empty()를 반환하도록 설정
+        given(reservationRepository.findById(nonExistentReservationId)).willReturn(Optional.empty());
+
+        // When & Then
+        assertThatThrownBy(() -> reservationService.cancelReservation(userEmail, nonExistentReservationId))
+                .isInstanceOf(EntityNotFoundException.class);
+    }
+
+    private RestaurantEntity createRestaurant(Long id, String name) {
+        RestaurantEntity restaurant = RestaurantEntity.builder().name(name).build();
+        ReflectionTestUtils.setField(restaurant, "id", id);
+        return restaurant;
+    }
+
+    private ReservationSlotEntity createReservationSlot() {
+        RestaurantEntity restaurant = createRestaurant(2L, "테스트 중식당");
+        return createReservationSlot(restaurant, 10, 5);
+    }
+
     private ReservationSlotEntity createReservationSlot(RestaurantEntity restaurantEntity, int reservedCapacity) {
-        return ReservationSlotEntity.of(restaurantEntity, null, 10, reservedCapacity);
+        return createReservationSlot(restaurantEntity, 8, reservedCapacity);
+    }
+
+    private ReservationSlotEntity createReservationSlot(RestaurantEntity restaurantEntity, int totalCapacity, int reservedCapacity) {
+        ReservationSlotEntity reservationSlot = ReservationSlotEntity.of(restaurantEntity, null, totalCapacity, reservedCapacity);
+        ReflectionTestUtils.setField(reservationSlot, "id", 1L);
+        return reservationSlot;
     }
 
     private UserEntity createUser(String userEmail) {
@@ -152,8 +229,19 @@ class ReservationServiceTest {
     }
 
     private ReservationEntity createReservation(UserEntity user, ReservationSlotEntity slot) {
-        return ReservationEntity.builder().restaurant(slot.getRestaurant()).user(user).reservationSlot(slot).build();
+        return createReservation(1L, user, slot, 2, ReservationStatus.RESERVED);
     }
 
+    private ReservationEntity createReservation(Long reservationId, UserEntity user, ReservationSlotEntity slot, int headCount, ReservationStatus reservationStatus) {
+        ReservationEntity reservation = ReservationEntity.builder()
+                .user(user)
+                .restaurant(slot.getRestaurant())
+                .reservationSlot(slot)
+                .headCount(headCount)
+                .build();
+        ReflectionTestUtils.setField(reservation, "id", reservationId);
+        ReflectionTestUtils.setField(reservation, "status", reservationStatus);
+        return reservation;
+    }
 
 }

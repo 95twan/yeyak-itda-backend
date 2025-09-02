@@ -45,4 +45,8 @@ public class ReservationEntity extends BaseEntity {
     public void setDefaultStatus() {
         this.status = ReservationStatus.WAITING;
     }
+
+    public void cancel() {
+        this.status = ReservationStatus.CANCELLED;
+    }
 }
