@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -75,4 +76,55 @@ class ReservationControllerTest {
         then(reservationService).should().createReservation(eq(userEmail), any(ReservationRequestDto.class));
 
     }
+
+    @Test
+    @DisplayName("실패 - 인증되지 않은 사용자가 예약을 하면, 401 Unauthorized를 응답한다.")
+    void createReservationWithoutAuthTest() throws Exception {
+        // Given
+        ReservationRequestDto reservationRequestDto = ReservationRequestDto.of(1L, 1);
+
+        // When & Then
+        mockMvc.perform(post("/api/reservations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(reservationRequestDto))
+                        .with(csrf()))
+                .andExpect(status().isUnauthorized());
+
+        then(reservationService).should(never()).createReservation(anyString(), any(ReservationRequestDto.class));
+    }
+
+    @Test
+    @WithUserDetails(value = "test@test.com", setupBefore = TestExecutionEvent.TEST_EXECUTION, userDetailsServiceBeanName = "userDetailsServiceImpl")
+    @DisplayName("성공 - 인증된 사용자가 예약을 취소하면, 200 OK 상태 코드를 응답한다.")
+    void cancelReservationTest() throws Exception {
+        // Given
+        String userEmail = "test@test.com";
+        Long reservationId = 1L;
+
+        willDoNothing().given(reservationService).cancelReservation(eq(userEmail), eq(reservationId));
+
+        // When & Then
+        mockMvc.perform(delete("/api/reservations/" + reservationId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
+                .andExpect(jsonPath("$.message").value("성공적으로 예약이 취소되었습니다."));
+
+        then(reservationService).should().cancelReservation(eq(userEmail), eq(reservationId));
+
+    }
+
+    @Test
+    @DisplayName("실패 - 인증되지 않은 사용자가 예약을 취소하면, 401 Unauthorized를 응답한다.")
+    void cancelReservationWithoutAuthTest() throws Exception {
+        // Given
+        Long reservationId = 1L;
+
+        // When & Then
+        mockMvc.perform(delete("/api/reservations/" + reservationId)
+                        .with(csrf()))
+                .andExpect(status().isUnauthorized());
+
+        then(reservationService).should(never()).cancelReservation(anyString(), anyLong());
+    }
+
 }
