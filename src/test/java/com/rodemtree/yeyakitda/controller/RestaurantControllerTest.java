@@ -287,7 +287,7 @@ class RestaurantControllerTest {
         RestaurantInfoDto info = new RestaurantInfoDto(id, 1L, "테스트 식당", List.of(), "설명", List.of(), "주소", "한식", "010-1234-5678", 4.5f, List.of());
         List<ReservationSlotDto> reservationSlots = List.of(new ReservationSlotDto(1L, LocalDateTime.now(), 3));
         List<MenuDto> menus = List.of(new MenuDto(1L, "메뉴1", "설명1", 10000, "https://example.com/menu1.jpg"));
-        List<ReviewDto> reviews = List.of(new ReviewDto(1L, 1L, "닉네임", List.of(), "코멘트", 5.0f));
+        List<ReviewDto> reviews = List.of(new ReviewDto(1L, 1L, "닉네임", List.of(), "코멘트", 5));
         return new RestaurantDetailDto(info, reservationSlots, menus, reviews);
     }
 }
