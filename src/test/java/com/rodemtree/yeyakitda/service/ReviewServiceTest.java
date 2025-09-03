@@ -3,7 +3,9 @@ package com.rodemtree.yeyakitda.service;
 
 import com.rodemtree.yeyakitda.dto.ReviewDto;
 import com.rodemtree.yeyakitda.entity.ReviewEntity;
+import com.rodemtree.yeyakitda.entity.ReviewImageEntity;
 import com.rodemtree.yeyakitda.mapper.ReviewMapper;
+import com.rodemtree.yeyakitda.repository.ReviewImageRepository;
 import com.rodemtree.yeyakitda.repository.ReviewRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,6 +15,7 @@ import org.mapstruct.factory.Mappers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Limit;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
@@ -29,11 +32,14 @@ class ReviewServiceTest {
     @Mock
     private ReviewRepository reviewRepository;
 
+    @Mock
+    private ReviewImageRepository reviewImageRepository;
+
     private final ReviewMapper reviewMapper = Mappers.getMapper(ReviewMapper.class);
 
     @BeforeEach
     public void setUp() {
-        reviewService = new ReviewService(reviewRepository, reviewMapper);
+        reviewService = new ReviewService(reviewRepository, reviewImageRepository, reviewMapper);
     }
 
     @Test
@@ -57,7 +63,51 @@ class ReviewServiceTest {
 
     }
 
+    @Test
+    @DisplayName("성공 - 최신 리뷰 10개 조회 시, 각 리뷰에 포함된 이미지 URL 목록을 함께 반환한다.")
+    void findTop10LatestReviewsWithImagesTest() {
+        // Given
+        Long restaurantId = 1L;
+        Limit limit = Limit.of(10);
+        ReviewEntity reviewEntity1 = createReviewEntity(restaurantId, "이미지 있는 리뷰1", 5);
+        ReviewEntity reviewEntity2 = createReviewEntity(2L, "이미지 없는 리뷰2", 4);
+        List<ReviewEntity> reviewEntities = List.of(reviewEntity1, reviewEntity2);
+        given(reviewRepository.findByRestaurant_IdOrderByCreatedAtDesc(restaurantId, limit)).willReturn(reviewEntities);
+
+        ReviewImageEntity reviewImage1 = createReviewImage(reviewEntity1, "url1");
+        ReviewImageEntity reviewImage2 = createReviewImage(reviewEntity1, "url2");
+        List<ReviewImageEntity> images = List.of(reviewImage1, reviewImage2);
+        given(reviewImageRepository.findByReview_Id(reviewEntity1.getId())).willReturn(images);
+        given(reviewImageRepository.findByReview_Id(reviewEntity2.getId())).willReturn(List.of());
+
+
+        // When
+        List<ReviewDto> result = reviewService.findTop10LatestReviews(restaurantId);
+
+        // Then
+        assertThat(result).hasSize(2);
+
+        assertThat(result.get(0).imageUrls()).hasSize(2);
+        assertThat(result.get(0).imageUrls()).containsExactly("url1", "url2");
+
+        assertThat(result.get(1).imageUrls()).isEmpty();
+
+        then(reviewRepository).should().findByRestaurant_IdOrderByCreatedAtDesc(restaurantId, Limit.of(10));
+        then(reviewImageRepository).should().findByReview_Id(reviewEntity1.getId());
+        then(reviewImageRepository).should().findByReview_Id(reviewEntity2.getId());
+    }
+
     private ReviewEntity createReviewEntity(String comment, Integer rating) {
-        return ReviewEntity.of(null, null, comment, rating);
+        return createReviewEntity(null, comment, rating);
+    }
+
+    private ReviewEntity createReviewEntity(Long id, String comment, Integer rating) {
+        ReviewEntity review = ReviewEntity.of(null, null, comment, rating);
+        ReflectionTestUtils.setField(review, "id", id);
+        return review;
+    }
+
+    private ReviewImageEntity createReviewImage(ReviewEntity review, String imageUrl) {
+        return ReviewImageEntity.of(review, imageUrl);
     }
 }
