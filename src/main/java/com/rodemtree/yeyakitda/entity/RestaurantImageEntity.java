@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class RestaurantImageEntity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
     private Long id;
 
     @ManyToOne
