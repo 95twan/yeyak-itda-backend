@@ -1,5 +1,7 @@
 package com.rodemtree.yeyakitda.service;
 
+import com.rodemtree.yeyakitda.document.OperatingHour;
+import com.rodemtree.yeyakitda.document.RestaurantOperatingHours;
 import com.rodemtree.yeyakitda.dto.ReservationSlotDto;
 import com.rodemtree.yeyakitda.dto.RestaurantDetailDto;
 import com.rodemtree.yeyakitda.dto.RestaurantDto;
@@ -13,6 +15,7 @@ import com.rodemtree.yeyakitda.mapper.RestaurantMapper;
 import com.rodemtree.yeyakitda.repository.MenuRepository;
 import com.rodemtree.yeyakitda.repository.RestaurantImageRepository;
 import com.rodemtree.yeyakitda.repository.RestaurantRepository;
+import com.rodemtree.yeyakitda.repository.mongodb.RestaurantOperatingHoursRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -55,6 +58,9 @@ class RestaurantServiceTest {
     private MenuRepository menuRepository;
 
     @Mock
+    private RestaurantOperatingHoursRepository restaurantOperatingHoursRepository;
+
+    @Mock
     private ReservationSlotService reservationSlotService;
 
     @Mock
@@ -69,6 +75,7 @@ class RestaurantServiceTest {
                 restaurantRepository,
                 restaurantImageRepository,
                 menuRepository,
+                restaurantOperatingHoursRepository,
                 reservationSlotService,
                 reviewService,
                 restaurantMapper,
@@ -312,6 +319,31 @@ class RestaurantServiceTest {
         assertThat(result.reservationSlots()).hasSize(reservationSlots.size());
     }
 
+    @Test
+    @DisplayName("성공 - 식당 Id를 받아 식당을 조회하면 operatingHours 포함한 식당 DTO를 반환한다.")
+    void getRestaurantDetailWithOperatingHoursTest() {
+        // Given
+        Long restaurantId = 1L;
+        RestaurantEntity restaurantEntity = createRestaurant("테스트 식당");
+        ReflectionTestUtils.setField(restaurantEntity, "id", restaurantId);
+        given(restaurantRepository.findById(restaurantId)).willReturn(Optional.of(restaurantEntity));
+
+        RestaurantOperatingHours restaurantOperatingHours = createRestaurantOperatingHours(restaurantId);
+        given(restaurantOperatingHoursRepository.findByRestaurantId(restaurantId)).willReturn(Optional.of(restaurantOperatingHours));
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // When
+        RestaurantDetailDto result = restaurantService.getRestaurantDetail(restaurantId, now.toLocalDate());
+
+        // Then
+        then(restaurantRepository).should().findById(restaurantId);
+        then(restaurantOperatingHoursRepository).should().findByRestaurantId(restaurantId);
+
+        assertThat(result.restaurant().operatingHours()).isNotNull();
+        assertThat(result.restaurant().operatingHours()).hasSize(1);
+    }
+
     private RestaurantEntity createRestaurant(String name) {
         return createRestaurant(name, null);
     }
@@ -333,6 +365,15 @@ class RestaurantServiceTest {
                 .time(time)
                 .remainingCapacity(5)
                 .build();
+    }
+
+    private RestaurantOperatingHours createRestaurantOperatingHours(Long restaurantId) {
+        OperatingHour monday = OperatingHour.builder()
+                .dayOfWeek("수")
+                .isClosed(true)
+                .build();
+
+        return RestaurantOperatingHours.of(restaurantId, List.of(monday));
     }
 
     private ReviewDto createReveiewDto(String comment) {

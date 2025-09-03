@@ -1,5 +1,7 @@
 package com.rodemtree.yeyakitda.mapper;
 
+import com.rodemtree.yeyakitda.document.OperatingHour;
+import com.rodemtree.yeyakitda.dto.OperatingHourDto;
 import com.rodemtree.yeyakitda.dto.RestaurantInfoDto;
 import com.rodemtree.yeyakitda.dto.RestaurantDto;
 import com.rodemtree.yeyakitda.entity.RestaurantEntity;
@@ -18,10 +20,10 @@ public interface RestaurantMapper {
     @Mapping(source = "entity.user.id", target = "userId")
     @Mapping(source = "images", target = "imageUrls")
     @Mapping(target = "tags", ignore = true)
-    @Mapping(target = "operatingHours", ignore = true)
-    RestaurantInfoDto restaurantEntityToRestaurantInfoDto(RestaurantEntity entity, List<RestaurantImageEntity> images);
+    RestaurantInfoDto restaurantEntityToRestaurantInfoDto(RestaurantEntity entity, List<RestaurantImageEntity> images, List<OperatingHour> operatingHours);
 
     default List<String> mapImageUrls(List<RestaurantImageEntity> images) {
         return images.stream().map(RestaurantImageEntity::getImageUrl).toList();
     }
+
 }

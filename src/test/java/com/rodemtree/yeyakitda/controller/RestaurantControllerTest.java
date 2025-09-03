@@ -37,6 +37,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@DisplayName("컨트롤러 - 식당")
 @WebMvcTest(RestaurantController.class)
 @Import(TestSecurityConfig.class)
 class RestaurantControllerTest {
@@ -284,10 +285,22 @@ class RestaurantControllerTest {
     }
 
     private RestaurantDetailDto createRestaurantDetailDto(Long id) {
-        RestaurantInfoDto info = new RestaurantInfoDto(id, 1L, "테스트 식당", List.of(), "설명", List.of(), "주소", "한식", "010-1234-5678", 4.5f, List.of());
+        RestaurantInfoDto restaurantInfo = RestaurantInfoDto.builder()
+                .id(id)
+                .userId(1L)
+                .name("테스트 식당")
+                .imageUrls(List.of())
+                .description("설명")
+                .tags(List.of())
+                .address("주소")
+                .category("한식")
+                .phoneNumber("010-1234-5678")
+                .rating(4.5f)
+                .operatingHours(List.of(OperatingHourDto.builder().dayOfWeek("수").isClosed(true).build()))
+                .build();
         List<ReservationSlotDto> reservationSlots = List.of(new ReservationSlotDto(1L, LocalDateTime.now(), 3));
         List<MenuDto> menus = List.of(new MenuDto(1L, "메뉴1", "설명1", 10000, "https://example.com/menu1.jpg"));
         List<ReviewDto> reviews = List.of(new ReviewDto(1L, 1L, "닉네임", List.of(), "코멘트", 5));
-        return new RestaurantDetailDto(info, reservationSlots, menus, reviews);
+        return new RestaurantDetailDto(restaurantInfo, reservationSlots, menus, reviews);
     }
 }
