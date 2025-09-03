@@ -1,5 +1,7 @@
 package com.rodemtree.yeyakitda.service;
 
+import com.rodemtree.yeyakitda.document.OperatingHour;
+import com.rodemtree.yeyakitda.document.RestaurantOperatingHours;
 import com.rodemtree.yeyakitda.dto.*;
 import com.rodemtree.yeyakitda.dto.request.RestaurantSearchConditionDto;
 import com.rodemtree.yeyakitda.entity.MenuEntity;
@@ -10,6 +12,7 @@ import com.rodemtree.yeyakitda.mapper.RestaurantMapper;
 import com.rodemtree.yeyakitda.repository.MenuRepository;
 import com.rodemtree.yeyakitda.repository.RestaurantImageRepository;
 import com.rodemtree.yeyakitda.repository.RestaurantRepository;
+import com.rodemtree.yeyakitda.repository.mongodb.RestaurantOperatingHoursRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +30,7 @@ public class RestaurantService {
     private final RestaurantRepository restaurantRepository;
     private final RestaurantImageRepository restaurantImageRepository;
     private final MenuRepository menuRepository;
+    private final RestaurantOperatingHoursRepository restaurantOperatingHoursRepository;
     private final ReservationSlotService reservationSlotService;
     private final ReviewService reviewService;
     private final RestaurantMapper restaurantMapper;
@@ -39,7 +44,9 @@ public class RestaurantService {
     public RestaurantDetailDto getRestaurantDetail(Long restaurantId, LocalDate date) {
         RestaurantEntity restaurantEntity = restaurantRepository.findById(restaurantId).orElseThrow(EntityNotFoundException::new);
         List<RestaurantImageEntity> restaurantImageEntities = restaurantImageRepository.findByRestaurant_Id(restaurantId);
-        RestaurantInfoDto restaurantInfoDto = restaurantMapper.restaurantEntityToRestaurantInfoDto(restaurantEntity, restaurantImageEntities);
+        Optional<RestaurantOperatingHours> restaurantOperatingHours = restaurantOperatingHoursRepository.findByRestaurantId(restaurantId);
+        List<OperatingHour> operatingHours = restaurantOperatingHours.map(RestaurantOperatingHours::getOperatingHours).orElse(List.of());
+        RestaurantInfoDto restaurantInfoDto = restaurantMapper.restaurantEntityToRestaurantInfoDto(restaurantEntity, restaurantImageEntities, operatingHours);
 
         List<ReservationSlotDto> reservationSlotDtos = reservationSlotService.findReservationSlotsByDate(restaurantId, date);
 

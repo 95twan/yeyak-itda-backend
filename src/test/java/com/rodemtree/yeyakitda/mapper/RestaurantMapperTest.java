@@ -1,5 +1,7 @@
 package com.rodemtree.yeyakitda.mapper;
 
+import com.rodemtree.yeyakitda.document.OperatingHour;
+import com.rodemtree.yeyakitda.document.RestaurantOperatingHours;
 import com.rodemtree.yeyakitda.dto.RestaurantInfoDto;
 import com.rodemtree.yeyakitda.dto.RestaurantDto;
 import com.rodemtree.yeyakitda.entity.RestaurantEntity;
@@ -14,7 +16,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
+@DisplayName("맵퍼 - 식당")
 @ExtendWith(MockitoExtension.class)
 class RestaurantMapperTest {
 
@@ -61,8 +63,14 @@ class RestaurantMapperTest {
         List<RestaurantImageEntity> restaurantImages = List.of(restaurantImageEntity1, restaurantImageEntity2);
         restaurantEntity.updateRestaurantThumbnailImage(restaurantImageEntity1);
 
+        OperatingHour monday = OperatingHour.builder()
+                .dayOfWeek("수")
+                .isClosed(true)
+                .build();
+        RestaurantOperatingHours restaurantOperatingHours = RestaurantOperatingHours.of(1L, List.of(monday));
+
         // When
-        RestaurantInfoDto restaurantInfoDto = restaurantMapper.restaurantEntityToRestaurantInfoDto(restaurantEntity, restaurantImages);
+        RestaurantInfoDto restaurantInfoDto = restaurantMapper.restaurantEntityToRestaurantInfoDto(restaurantEntity, restaurantImages, restaurantOperatingHours.getOperatingHours());
 
         // Then
         assertThat(restaurantInfoDto.name()).isEqualTo(restaurantEntity.getName());
@@ -72,5 +80,6 @@ class RestaurantMapperTest {
         assertThat(restaurantInfoDto.phoneNumber()).isEqualTo(restaurantEntity.getPhoneNumber());
         assertThat(restaurantInfoDto.rating()).isEqualTo(restaurantEntity.getRating());
         assertThat(restaurantInfoDto.imageUrls()).hasSize(2);
+        assertThat(restaurantInfoDto.operatingHours().get(0).dayOfWeek()).isEqualTo(monday.getDayOfWeek());
     }
 }
