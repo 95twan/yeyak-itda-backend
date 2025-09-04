@@ -3,10 +3,7 @@ package com.rodemtree.yeyakitda.service;
 
 import com.rodemtree.yeyakitda.dto.ReviewDto;
 import com.rodemtree.yeyakitda.dto.request.ReviewRequestDto;
-import com.rodemtree.yeyakitda.entity.RestaurantEntity;
-import com.rodemtree.yeyakitda.entity.ReviewEntity;
-import com.rodemtree.yeyakitda.entity.ReviewImageEntity;
-import com.rodemtree.yeyakitda.entity.UserEntity;
+import com.rodemtree.yeyakitda.entity.*;
 import com.rodemtree.yeyakitda.mapper.ReviewMapper;
 import com.rodemtree.yeyakitda.repository.RestaurantRepository;
 import com.rodemtree.yeyakitda.repository.ReviewImageRepository;
@@ -21,6 +18,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Limit;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -35,6 +33,9 @@ import static org.mockito.BDDMockito.*;
 class ReviewServiceTest {
 
     private ReviewService reviewService;
+
+    @Mock
+    private ImageService imageService;
 
     @Mock
     private ReviewRepository reviewRepository;
@@ -52,7 +53,7 @@ class ReviewServiceTest {
 
     @BeforeEach
     public void setUp() {
-        reviewService = new ReviewService(reviewRepository, reviewImageRepository, userRepository, restaurantRepository, reviewMapper);
+        reviewService = new ReviewService(imageService, reviewRepository, reviewImageRepository, userRepository, restaurantRepository, reviewMapper);
     }
 
     @Test
@@ -117,7 +118,6 @@ class ReviewServiceTest {
         Long restaurantId = 1L;
         String userEmail = "test@test.com";
         ReviewRequestDto reviewRequestDto = new ReviewRequestDto(4, "test comment");
-        List<MultipartFile> images = List.of();
 
         UserEntity userEntity = UserEntity.builder().email(userEmail).build();
         RestaurantEntity restaurantEntity = RestaurantEntity.builder().build();
@@ -126,7 +126,7 @@ class ReviewServiceTest {
         given(restaurantRepository.findById(restaurantId)).willReturn(Optional.of(restaurantEntity));
 
         // When
-        reviewService.createReview(restaurantId, userEmail, reviewRequestDto, images);
+        reviewService.createReview(restaurantId, userEmail, reviewRequestDto, null);
 
         // Then
         ArgumentCaptor<ReviewEntity> reviewCaptor = ArgumentCaptor.forClass(ReviewEntity.class);
@@ -138,6 +138,51 @@ class ReviewServiceTest {
         assertThat(reviewEntity.getUser()).isEqualTo(userEntity);
         assertThat(reviewEntity.getRestaurant()).isEqualTo(restaurantEntity);
 
+    }
+
+    @Test
+    @DisplayName("성공 - 리뷰 정보와 이미지 파일들이 주어지면, 이미지 업로드 후 리뷰와 이미지 정보를 함께 저장한다.")
+    void createReviewWithImagesTest() {
+        // Given
+        Long restaurantId = 1L;
+        String userEmail = "test@test.com";
+        ReviewRequestDto reviewRequestDto = new ReviewRequestDto(5, "정말 맛있는 곳입니다!");
+
+        MockMultipartFile image1 = new MockMultipartFile("images", "image1.jpg", "image/jpeg", "image1 content".getBytes());
+        MockMultipartFile image2 = new MockMultipartFile("images", "image2.png", "image/png", "image2 content".getBytes());
+        List<MultipartFile> images = List.of(image1, image2);
+
+        UserEntity userEntity = UserEntity.builder().email(userEmail).build();
+        RestaurantEntity restaurantEntity = RestaurantEntity.builder().build();
+
+        ReviewEntity reviewEntity = ReviewEntity.of(restaurantEntity, userEntity, reviewRequestDto.comment(), reviewRequestDto.rating());
+        ReflectionTestUtils.setField(reviewEntity, "id", 1L); // given(reviewRepository.save(...))가 반환할 객체
+
+        given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(userEntity));
+        given(restaurantRepository.findById(restaurantId)).willReturn(Optional.of(restaurantEntity));
+        given(reviewRepository.save(any(ReviewEntity.class))).willReturn(reviewEntity);
+
+        given(imageService.upload(image1, ImageDomain.REVIEW)).willReturn("reviews/path-to-image1.jpg");
+        given(imageService.upload(image2, ImageDomain.REVIEW)).willReturn("reviews/path-to-image2.png");
+
+        // When
+        reviewService.createReview(restaurantId, userEmail, reviewRequestDto, images);
+
+        // Then
+        then(reviewRepository).should().save(any(ReviewEntity.class));
+
+        then(imageService).should().upload(image1, ImageDomain.REVIEW);
+        then(imageService).should().upload(image2, ImageDomain.REVIEW);
+
+        ArgumentCaptor<List<ReviewImageEntity>> reviewImageEntitiesCaptor = ArgumentCaptor.forClass(List.class);
+        then(reviewImageRepository).should().saveAll(reviewImageEntitiesCaptor.capture());
+        List<ReviewImageEntity> savedImages = reviewImageEntitiesCaptor.getValue();
+
+        assertThat(savedImages).hasSize(2);
+        assertThat(savedImages.get(0).getImageUrl()).isEqualTo("reviews/path-to-image1.jpg");
+        assertThat(savedImages.get(0).getReview()).isEqualTo(reviewEntity);
+        assertThat(savedImages.get(1).getImageUrl()).isEqualTo("reviews/path-to-image2.png");
+        assertThat(savedImages.get(1).getReview()).isEqualTo(reviewEntity);
     }
 
     private ReviewEntity createReviewEntity(String comment, Integer rating) {

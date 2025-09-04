@@ -26,6 +26,9 @@ spring:
   data:
     mongodb:
       uri: ${MONGO_URI}
+  servlet:
+    multipart:
+      max-file-size: 10MB
 
 jwt:
   secret: ${JWT_SECRET}
@@ -33,3 +36,10 @@ jwt:
 #    access: 3600000
     access: 10000
     refresh: 604800000
+
+minio:
+  base-url: ${MINIO_BASE_URL}
+  endpoint: ${MINIO_ENDPOINT}
+  access-key: ${MINIO_ACCESS_KEY}
+  secret-key: ${MINIO_SECRET_KEY}
+  bucket-name: ${MINIO_BUCKET}

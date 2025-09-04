@@ -20,3 +20,10 @@ jwt:
   expiration:
     access: 3600000
     refresh: 604800000
+
+minio:
+  base-url: http://localhost:9000
+  endpoint: http://localhost:9000
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket-name: yeyak-itda

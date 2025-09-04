@@ -42,6 +42,8 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-impl:0.12.6'
     implementation 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
+    implementation 'io.minio:minio:8.5.17'
+
     implementation 'io.github.openfeign.querydsl:querydsl-jpa:7.0'
     annotationProcessor "io.github.openfeign.querydsl:querydsl-apt:7.0:jakarta"
     annotationProcessor "jakarta.annotation:jakarta.annotation-api"
