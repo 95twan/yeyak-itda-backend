@@ -47,6 +47,7 @@ class ReservationServiceTest {
     void createReservationTest() {
         // Given
         String userEmail = "test@test.com";
+        Long restaurantId = 1L;
         Long slotId = 1L;
         int headCount = 2;
 
@@ -62,7 +63,7 @@ class ReservationServiceTest {
         given(reservationRepository.save(any())).willReturn(reservationEntity);
 
         // When
-        reservationService.createReservation(userEmail, reservationRequestDto);
+        reservationService.createReservation(userEmail, restaurantId, reservationRequestDto);
 
         // Then
         then(userRepository).should().findByEmail(userEmail);
@@ -83,6 +84,7 @@ class ReservationServiceTest {
     void createReservationWithNotExistUserTest() {
         // Given
         String notExistEmail = "ttttt@test.com";
+        Long restaurantId = 1L;
         Long slotId = 1L;
         int headCount = 2;
 
@@ -90,7 +92,7 @@ class ReservationServiceTest {
         given(userRepository.findByEmail(notExistEmail)).willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> reservationService.createReservation(notExistEmail, reservationRequestDto))
+        assertThatThrownBy(() -> reservationService.createReservation(notExistEmail, restaurantId, reservationRequestDto))
                 .isInstanceOf(EntityNotFoundException.class);
         then(reservationSlotRepository).should(never()).findById(slotId);
         then(reservationRepository).should(never()).save(any());
@@ -101,6 +103,7 @@ class ReservationServiceTest {
     void createReservationWithNotExistSlotIdTest() {
         // Given
         String userEmail = "test@test.com";
+        Long restaurantId = 1L;
         Long notExistSlotId = 1L;
         int headCount = 2;
 
@@ -110,8 +113,32 @@ class ReservationServiceTest {
         given(reservationSlotRepository.findById(notExistSlotId)).willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> reservationService.createReservation(userEmail, reservationRequestDto))
+        assertThatThrownBy(() -> reservationService.createReservation(userEmail, restaurantId, reservationRequestDto))
                 .isInstanceOf(EntityNotFoundException.class);
+        then(reservationRepository).should(never()).save(any());
+    }
+
+    @Test
+    @DisplayName("실패 - 다른 식당의 예약 슬롯으로 예약을 생성하면 AccessDeniedException을 던진다.")
+    void createReservationWithMismatchedRestaurantIdTest() {
+        // Given
+        String userEmail = "test@test.com";
+        Long requestedRestaurantId = 999L; // URL로 요청된 식당 ID
+        Long actualSlotRestaurantId = 1L;   // 실제 슬롯이 속한 식당 ID
+
+        ReservationRequestDto reservationRequestDto = ReservationRequestDto.of(1L, 2);
+        UserEntity user = createUser(userEmail);
+        RestaurantEntity restaurant = createRestaurant(actualSlotRestaurantId, "실제 식당");
+        ReservationSlotEntity slot = createReservationSlot(restaurant, 10, 5);
+
+        given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
+        given(reservationSlotRepository.findById(reservationRequestDto.slotId())).willReturn(Optional.of(slot));
+
+        // When & Then
+        assertThatThrownBy(() -> reservationService.createReservation(userEmail, requestedRestaurantId, reservationRequestDto))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("해당 식당의 예약 슬롯이 아닙니다.");
+
         then(reservationRepository).should(never()).save(any());
     }
 
@@ -120,6 +147,7 @@ class ReservationServiceTest {
     void createReservationWithGreaterThanPossibleCapcityTest() {
         // Given
         String userEmail = "test@test.com";
+        Long restaurantId = 1L;
         Long slotId = 1L;
         int headCount = 8;
 
@@ -133,7 +161,7 @@ class ReservationServiceTest {
         given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
         given(reservationSlotRepository.findById(slotId)).willReturn(Optional.of(slot));
         // When & Then
-        assertThatThrownBy(() -> reservationService.createReservation(userEmail, reservationRequestDto))
+        assertThatThrownBy(() -> reservationService.createReservation(userEmail, restaurantId, reservationRequestDto))
                 .isInstanceOf(ReservationException.class);
 
         then(reservationRepository).should(never()).save(any());
@@ -144,6 +172,7 @@ class ReservationServiceTest {
     void cancelReservationTest() {
         // Given
         String userEmail = "test@test.com";
+        Long restaurantId = 1L;
         Long reservationId = 1L;
         int headCount = 2;
         int initialReservedCapacity = 5;
@@ -157,7 +186,7 @@ class ReservationServiceTest {
         given(reservationRepository.findById(reservationId)).willReturn(Optional.of(reservation));
 
         // When
-        reservationService.cancelReservation(userEmail, reservationId);
+        reservationService.cancelReservation(userEmail, restaurantId, reservationId);
 
         // Then
         assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
@@ -166,20 +195,49 @@ class ReservationServiceTest {
     }
 
     @Test
-    @DisplayName("실패 - 다른 사용자의 예약을 취소하려고 하면, AccessDeniedException 예외가 발생한다.")
-    void cancelReservationWithNoPermissionTest() {
+    @DisplayName("실패 - 다른 식당 ID로 예약을 취소하려고 하면, AccessDeniedException 예외가 발생한다.")
+    void cancelReservationWithMismatchedRestaurantIdTest() {
         // Given
         String userEmail = "test@test.com";
-        String otherUserEmail = "other@test.com";
+        Long requestedRestaurantId = 999L; // URL로 요청된 식당 ID
+        Long actualReservationRestaurantId = 1L;   // 실제 예약이 속한 식당 ID
         Long reservationId = 1L;
 
         UserEntity user = createUser(userEmail);
-        ReservationEntity reservation = createReservation(reservationId, user, createReservationSlot(), 2, ReservationStatus.RESERVED);
+        RestaurantEntity restaurant = createRestaurant(actualReservationRestaurantId, "실제 식당");
+        ReservationSlotEntity slot = createReservationSlot(restaurant, 10, 5);
+        ReservationEntity reservation = createReservation(reservationId, user, slot, 2, ReservationStatus.RESERVED);
+
 
         given(reservationRepository.findById(reservationId)).willReturn(Optional.of(reservation));
 
         // When & Then
-        assertThatThrownBy(() -> reservationService.cancelReservation(otherUserEmail, reservationId))
+        assertThatThrownBy(() -> reservationService.cancelReservation(userEmail, requestedRestaurantId, reservationId))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessage("해당 식당의 예약 정보가 아닙니다.");
+
+        // 예약 상태가 변경되지 않았는지 확인
+        assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.RESERVED);
+    }
+
+    @Test
+    @DisplayName("실패 - 다른 사용자의 예약을 취소하려고 하면, AccessDeniedException 예외가 발생한다.")
+    void cancelReservationWithNoPermissionTest() {
+        // Given
+        String userEmail = "test@test.com";
+        Long restaurantId = 1L;
+        String otherUserEmail = "other@test.com";
+        Long reservationId = 1L;
+
+        UserEntity user = createUser(userEmail);
+        RestaurantEntity restaurant = createRestaurant(restaurantId, "실제 식당");
+        ReservationSlotEntity slot = createReservationSlot(restaurant, 10, 5);
+        ReservationEntity reservation = createReservation(reservationId, user, slot, 2, ReservationStatus.RESERVED);
+
+        given(reservationRepository.findById(reservationId)).willReturn(Optional.of(reservation));
+
+        // When & Then
+        assertThatThrownBy(() -> reservationService.cancelReservation(otherUserEmail, restaurantId, reservationId))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("예약을 취소할 권한이 없습니다.");
 
@@ -191,13 +249,14 @@ class ReservationServiceTest {
     void cancelReservationWithNonExistentIdTest() {
         // Given
         String userEmail = "test@test.com";
+        Long restaurantId = 1L;
         Long nonExistentReservationId = 999L;
 
         // reservationId로 조회 시 Optional.empty()를 반환하도록 설정
         given(reservationRepository.findById(nonExistentReservationId)).willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> reservationService.cancelReservation(userEmail, nonExistentReservationId))
+        assertThatThrownBy(() -> reservationService.cancelReservation(userEmail, restaurantId, nonExistentReservationId))
                 .isInstanceOf(EntityNotFoundException.class);
     }
 
@@ -205,11 +264,6 @@ class ReservationServiceTest {
         RestaurantEntity restaurant = RestaurantEntity.builder().name(name).build();
         ReflectionTestUtils.setField(restaurant, "id", id);
         return restaurant;
-    }
-
-    private ReservationSlotEntity createReservationSlot() {
-        RestaurantEntity restaurant = createRestaurant(2L, "테스트 중식당");
-        return createReservationSlot(restaurant, 10, 5);
     }
 
     private ReservationSlotEntity createReservationSlot(RestaurantEntity restaurantEntity, int reservedCapacity) {

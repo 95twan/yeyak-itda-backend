@@ -32,9 +32,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @DisplayName("컨트롤러 - 예약")
-@WebMvcTest(ReservationController.class)
+@WebMvcTest(RestaurantReservationController.class)
 @Import(TestSecurityConfig.class)
-class ReservationControllerTest {
+class RestaurantReservationControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -61,11 +61,12 @@ class ReservationControllerTest {
     void createReservationTest() throws Exception {
         // Given
         String userEmail = "test@test.com";
+        Long restaurantId = 1L;
         ReservationRequestDto reservationRequestDto = ReservationRequestDto.of(1L, 1);
-        willDoNothing().given(reservationService).createReservation(eq(userEmail), any(ReservationRequestDto.class));
+        willDoNothing().given(reservationService).createReservation(eq(userEmail), eq(restaurantId), any(ReservationRequestDto.class));
 
         // When & Then
-        mockMvc.perform(post("/api/reservations")
+        mockMvc.perform(post("/api/restaurants/" + restaurantId + "/reservations")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(reservationRequestDto))
                         .with(csrf()))
@@ -73,7 +74,7 @@ class ReservationControllerTest {
                 .andExpect(jsonPath("$.status").value(HttpStatus.CREATED.value()))
                 .andExpect(jsonPath("$.message").isNotEmpty());
 
-        then(reservationService).should().createReservation(eq(userEmail), any(ReservationRequestDto.class));
+        then(reservationService).should().createReservation(eq(userEmail), eq(restaurantId), any(ReservationRequestDto.class));
 
     }
 
@@ -81,16 +82,17 @@ class ReservationControllerTest {
     @DisplayName("실패 - 인증되지 않은 사용자가 예약을 하면, 401 Unauthorized를 응답한다.")
     void createReservationWithoutAuthTest() throws Exception {
         // Given
+        Long restaurantId = 1L;
         ReservationRequestDto reservationRequestDto = ReservationRequestDto.of(1L, 1);
 
         // When & Then
-        mockMvc.perform(post("/api/reservations")
+        mockMvc.perform(post("/api/restaurants/" + restaurantId + "/reservations")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(reservationRequestDto))
                         .with(csrf()))
                 .andExpect(status().isUnauthorized());
 
-        then(reservationService).should(never()).createReservation(anyString(), any(ReservationRequestDto.class));
+        then(reservationService).should(never()).createReservation(anyString(), anyLong(), any(ReservationRequestDto.class));
     }
 
     @Test
@@ -99,17 +101,18 @@ class ReservationControllerTest {
     void cancelReservationTest() throws Exception {
         // Given
         String userEmail = "test@test.com";
+        Long restaurantId = 1L;
         Long reservationId = 1L;
 
-        willDoNothing().given(reservationService).cancelReservation(eq(userEmail), eq(reservationId));
+        willDoNothing().given(reservationService).cancelReservation(eq(userEmail), eq(restaurantId), eq(reservationId));
 
         // When & Then
-        mockMvc.perform(delete("/api/reservations/" + reservationId))
+        mockMvc.perform(delete("/api/restaurants/" + restaurantId + "/reservations/" + reservationId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(HttpStatus.OK.value()))
                 .andExpect(jsonPath("$.message").value("성공적으로 예약이 취소되었습니다."));
 
-        then(reservationService).should().cancelReservation(eq(userEmail), eq(reservationId));
+        then(reservationService).should().cancelReservation(eq(userEmail), eq(restaurantId), eq(reservationId));
 
     }
 
@@ -118,13 +121,14 @@ class ReservationControllerTest {
     void cancelReservationWithoutAuthTest() throws Exception {
         // Given
         Long reservationId = 1L;
+        Long restaurantId = 1L;
 
         // When & Then
-        mockMvc.perform(delete("/api/reservations/" + reservationId)
+        mockMvc.perform(delete("/api/restaurants/" + restaurantId + "/reservations/" + reservationId)
                         .with(csrf()))
                 .andExpect(status().isUnauthorized());
 
-        then(reservationService).should(never()).cancelReservation(anyString(), anyLong());
+        then(reservationService).should(never()).cancelReservation(anyString(), anyLong(), anyLong());
     }
 
 }
