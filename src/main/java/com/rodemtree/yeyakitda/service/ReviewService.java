@@ -2,10 +2,7 @@ package com.rodemtree.yeyakitda.service;
 
 import com.rodemtree.yeyakitda.dto.ReviewDto;
 import com.rodemtree.yeyakitda.dto.request.ReviewRequestDto;
-import com.rodemtree.yeyakitda.entity.RestaurantEntity;
-import com.rodemtree.yeyakitda.entity.ReviewEntity;
-import com.rodemtree.yeyakitda.entity.ReviewImageEntity;
-import com.rodemtree.yeyakitda.entity.UserEntity;
+import com.rodemtree.yeyakitda.entity.*;
 import com.rodemtree.yeyakitda.mapper.ReviewMapper;
 import com.rodemtree.yeyakitda.repository.RestaurantRepository;
 import com.rodemtree.yeyakitda.repository.ReviewImageRepository;
@@ -25,6 +22,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ReviewService {
 
+    private final ImageService imageService;
     private final ReviewRepository reviewRepository;
     private final ReviewImageRepository reviewImageRepository;
     private final UserRepository userRepository;
@@ -48,8 +46,18 @@ public class ReviewService {
 
         ReviewEntity reviewEntity = ReviewEntity.of(restaurantEntity, userEntity, reviewRequestDto.comment(), reviewRequestDto.rating());
 
-        reviewRepository.save(reviewEntity);
+        ReviewEntity savedReviewEntity = reviewRepository.save(reviewEntity);
 
-        // Todo - 이미지 처리
+        if (images != null && !images.isEmpty()) {
+            List<String> uploadedImageUrls = images.stream()
+                    .map(image -> imageService.upload(image, ImageDomain.REVIEW))
+                    .toList();
+
+            List<ReviewImageEntity> reviewImageEntities = uploadedImageUrls.stream()
+                    .map(imageUrl -> ReviewImageEntity.of(savedReviewEntity, imageUrl))
+                    .toList();
+
+            reviewImageRepository.saveAll(reviewImageEntities);
+        }
     }
 }
