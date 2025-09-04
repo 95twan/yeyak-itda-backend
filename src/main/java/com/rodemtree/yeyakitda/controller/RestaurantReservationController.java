@@ -12,18 +12,19 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/reservations")
-public class ReservationController {
+@RequestMapping("/api/restaurants/{restaurantId}/reservations")
+public class RestaurantReservationController {
 
     private final ReservationService reservationService;
 
     @PostMapping
     public ResponseEntity<ApiResponseDto<?>> createReservation(
             @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long restaurantId,
             @RequestBody ReservationRequestDto reservationRequestDto
     ) {
         String userEmail = userDetails.getUsername();
-        reservationService.createReservation(userEmail, reservationRequestDto);
+        reservationService.createReservation(userEmail, restaurantId, reservationRequestDto);
         ApiResponseDto<?> responseDto = ApiResponseDto.of(ResponseSuccessCode.RESERVATION_CREATE);
         return ResponseEntity.status(201).body(responseDto);
     }
@@ -31,10 +32,11 @@ public class ReservationController {
     @DeleteMapping("/{reservationId}")
     public ResponseEntity<ApiResponseDto<?>> cancelReservation(
             @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long restaurantId,
             @PathVariable Long reservationId
     ) {
         String userEmail = userDetails.getUsername();
-        reservationService.cancelReservation(userEmail, reservationId);
+        reservationService.cancelReservation(userEmail, restaurantId, reservationId);
         ApiResponseDto<?> responseDto = ApiResponseDto.of(ResponseSuccessCode.RESERVATION_CANCEL);
         return ResponseEntity.ok(responseDto);
     }
