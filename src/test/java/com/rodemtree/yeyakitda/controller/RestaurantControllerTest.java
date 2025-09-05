@@ -5,6 +5,7 @@ import com.rodemtree.yeyakitda.dto.*;
 import com.rodemtree.yeyakitda.dto.request.RestaurantSearchConditionDto;
 import com.rodemtree.yeyakitda.dto.response.ResponseErrorCode;
 import com.rodemtree.yeyakitda.entity.RestaurantEntity;
+import com.rodemtree.yeyakitda.service.ReservationSlotService;
 import com.rodemtree.yeyakitda.service.RestaurantService;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.DisplayName;
@@ -21,6 +22,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -28,8 +30,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
@@ -50,6 +51,9 @@ class RestaurantControllerTest {
 
     @MockitoBean
     private Clock clock;
+
+    @MockitoBean
+    private ReservationSlotService reservationSlotService;
 
     @Test
     @DisplayName("성공 - 식당 목록을 요청하면 기본 페이징(0페이지, 12개)된 식당 목록을 반환한다.")
@@ -282,6 +286,101 @@ class RestaurantControllerTest {
                 .andExpect(status().isBadRequest());
 
         then(restaurantService).should(never()).getRestaurantDetail(eq(restaurantId), any());
+    }
+
+    @Test
+    @DisplayName("성공 - 식당 ID와 날짜로 식당 예약 슬롯을 요청하면, 200 OK와 함께 식당 예약 슬롯 DTO 리스트를 반환한다.")
+    void getRestaurantReservationSlotsTest() throws Exception {
+        // Given
+        Long restaurantId = 1L;
+
+        LocalDate now = LocalDate.of(2025, 9, 6);
+
+        ReservationSlotDto reservationSlot1 = new ReservationSlotDto(1L, now.atTime(LocalTime.now()), 3);
+        ReservationSlotDto reservationSlot2 = new ReservationSlotDto(2L, now.atTime(LocalTime.now()).plusHours(1), 2);
+        List<ReservationSlotDto> reservationSlotDtos = List.of(reservationSlot1, reservationSlot2);
+
+        ZoneId seoulZone = ZoneId.of("Asia/Seoul");
+        Instant fixedInstant = LocalDate.of(2025, 9, 5).atStartOfDay(seoulZone).toInstant();
+        given(clock.instant()).willReturn(fixedInstant);
+        given(clock.getZone()).willReturn(seoulZone);
+
+        given(reservationSlotService.findReservationSlotsByDate(eq(restaurantId), eq(now))).willReturn(reservationSlotDtos);
+
+        // When & Then
+        mockMvc.perform(get("/api/restaurants/" + restaurantId + "/reservationSlots")
+                        .param("date", now.format(DateTimeFormatter.ISO_DATE)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.message").value("성공적으로 예약 슬롯을 조회했습니다."))
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data.length()").value(2))
+                .andExpect(jsonPath("$.data[0].slotId").value(1L));
+
+        then(reservationSlotService).should().findReservationSlotsByDate(eq(restaurantId), eq(now));
+    }
+
+    @Test
+    @DisplayName("실패 - 날짜 없이 식당 예약 슬롯을 요청하면, 400 BadRequest를 반환한다.")
+    void getRestaurantReservationSlotsWithourDateTest() throws Exception {
+        // Given
+        Long restaurantId = 1L;
+
+        // When & Then
+        mockMvc.perform(get("/api/restaurants/" + restaurantId + "/reservationSlots"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("date : 필수 입력 파라미터입니다."));
+
+        then(reservationSlotService).should(never()).findReservationSlotsByDate(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("실패 - 과거 날짜로 식당 예약 슬롯을 요청하면, 400 BadRequest를 반환한다.")
+    void getRestaurantReservationSlotsWithPastDateTest() throws Exception {
+        // Given
+        Long restaurantId = 1L;
+
+        LocalDate past = LocalDate.of(2025, 9, 1);
+
+        ZoneId seoulZone = ZoneId.of("Asia/Seoul");
+        Instant fixedInstant = LocalDate.of(2025, 9, 5).atStartOfDay(seoulZone).toInstant();
+        given(clock.instant()).willReturn(fixedInstant);
+        given(clock.getZone()).willReturn(seoulZone);
+
+        // When & Then
+        mockMvc.perform(get("/api/restaurants/" + restaurantId + "/reservationSlots")
+                        .param("date", past.format(DateTimeFormatter.ISO_DATE)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("과거 날짜는 조회할 수 없습니다."));
+
+        then(reservationSlotService).should(never()).findReservationSlotsByDate(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("실패 - 없는 식당 ID로 식당 예약 슬롯을 요청하면, 404 NotFound를 반환한다.")
+    void getRestaurantReservationSlotsWithNotExistRestaurantIdTest() throws Exception {
+        // Given
+        Long restaurantId = 999L;
+
+        LocalDate now = LocalDate.of(2025, 9, 6);
+
+        ZoneId seoulZone = ZoneId.of("Asia/Seoul");
+        Instant fixedInstant = LocalDate.of(2025, 9, 5).atStartOfDay(seoulZone).toInstant();
+        given(clock.instant()).willReturn(fixedInstant);
+        given(clock.getZone()).willReturn(seoulZone);
+
+        given(reservationSlotService.findReservationSlotsByDate(eq(restaurantId), eq(now))).willThrow(new EntityNotFoundException("해당 식당을 찾을 수 없습니다."));
+
+        // When & Then
+        mockMvc.perform(get("/api/restaurants/" + restaurantId + "/reservationSlots")
+                        .param("date", now.format(DateTimeFormatter.ISO_DATE)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("해당 식당을 찾을 수 없습니다."));
+
+        then(reservationSlotService).should().findReservationSlotsByDate(eq(restaurantId), eq(now));
     }
 
     private RestaurantDetailDto createRestaurantDetailDto(Long id) {

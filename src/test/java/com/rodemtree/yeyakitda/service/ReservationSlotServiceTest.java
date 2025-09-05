@@ -5,6 +5,8 @@ import com.rodemtree.yeyakitda.dto.ReservationSlotDto;
 import com.rodemtree.yeyakitda.entity.ReservationSlotEntity;
 import com.rodemtree.yeyakitda.mapper.ReservationSlotMapper;
 import com.rodemtree.yeyakitda.repository.ReservationSlotRepository;
+import com.rodemtree.yeyakitda.repository.RestaurantRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,8 +19,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -32,13 +36,16 @@ class ReservationSlotServiceTest {
     @Mock
     private ReservationSlotRepository reservationSlotRepository;
 
+    @Mock
+    private RestaurantRepository restaurantRepository;
+
     private final ReservationSlotMapper reservationSlotMapper = Mappers.getMapper(ReservationSlotMapper.class);
 
     private static final int CUTOFF_HOUR = 6;
 
     @BeforeEach
     public void setUp() {
-        reservationSlotService = new ReservationSlotService(reservationSlotRepository, reservationSlotMapper);
+        reservationSlotService = new ReservationSlotService(reservationSlotRepository, restaurantRepository, reservationSlotMapper);
     }
 
     @Test
@@ -52,6 +59,7 @@ class ReservationSlotServiceTest {
         ReservationSlotEntity reservationSlot1 = createResevationSlot(expectedStartDateTime.plusHours(1));
         ReservationSlotEntity reservationSlot2 = createResevationSlot(expectedStartDateTime.plusHours(2));
         List<ReservationSlotEntity> reservationSlots = List.of(reservationSlot1, reservationSlot2);
+        given(restaurantRepository.existsById(restaurantId)).willReturn(true);
         given(reservationSlotRepository.findByRestaurant_IdAndSlotAtGreaterThanEqualAndSlotAtLessThan(anyLong(), any(), any())).willReturn(reservationSlots);
 
         // When
@@ -66,6 +74,20 @@ class ReservationSlotServiceTest {
         assertThat(endDateTimeCaptor.getValue()).isEqualTo(expectedEndDateTime);
 
         assertThat(result.size()).isEqualTo(reservationSlots.size());
+    }
+
+    @Test
+    @DisplayName("실패 - 없는 식당 Id가 주어지면, EntityNotFoundException을 던진다.")
+    void findReservationSlotsByDateWithNotExistTest() {
+        // Given
+        Long restaurantId = 999L;
+        LocalDate date = LocalDate.of(2025, 8, 26);
+        given(restaurantRepository.existsById(restaurantId)).willReturn(false);
+
+        // When & Then
+        assertThatThrownBy(() -> reservationSlotService.findReservationSlotsByDate(restaurantId, date))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessage("해당 식당을 찾을 수 없습니다.");
     }
 
     private ReservationSlotEntity createResevationSlot(LocalDateTime slotAt) {

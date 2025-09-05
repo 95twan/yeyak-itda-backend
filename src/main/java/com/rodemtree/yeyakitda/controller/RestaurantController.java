@@ -1,5 +1,6 @@
 package com.rodemtree.yeyakitda.controller;
 
+import com.rodemtree.yeyakitda.dto.ReservationSlotDto;
 import com.rodemtree.yeyakitda.dto.RestaurantDetailDto;
 import com.rodemtree.yeyakitda.dto.RestaurantDto;
 import com.rodemtree.yeyakitda.dto.request.RestaurantSearchConditionDto;
@@ -8,6 +9,7 @@ import com.rodemtree.yeyakitda.dto.response.PagedResponseDto;
 import com.rodemtree.yeyakitda.dto.response.ResponseErrorCode;
 import com.rodemtree.yeyakitda.dto.response.ResponseSuccessCode;
 import com.rodemtree.yeyakitda.exception.InvalidRequestException;
+import com.rodemtree.yeyakitda.service.ReservationSlotService;
 import com.rodemtree.yeyakitda.service.RestaurantService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/restaurants")
@@ -29,6 +32,7 @@ public class RestaurantController {
 
     private final RestaurantService restaurantService;
     private final Clock clock;
+    private final ReservationSlotService reservationSlotService;
 
     @GetMapping
     public ResponseEntity<ApiResponseDto<PagedResponseDto<RestaurantDto>>> searchRestaurants(
@@ -68,4 +72,20 @@ public class RestaurantController {
         return ResponseEntity.status(HttpStatus.OK).body(responseDto);
     }
 
+    @GetMapping("/{restaurantId}/reservationSlots")
+    public ResponseEntity<ApiResponseDto<List<ReservationSlotDto>>> getRestaurantReservationSlots(
+            @PathVariable Long restaurantId,
+            @RequestParam(required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        LocalDate now = LocalDate.now(clock);
+
+        if (date.isBefore(now)) {
+            throw new InvalidRequestException(ResponseErrorCode.INVALID_PAST_DATE);
+        }
+
+        List<ReservationSlotDto> reservationSlotDtos = reservationSlotService.findReservationSlotsByDate(restaurantId, date);
+        ApiResponseDto<List<ReservationSlotDto>> responseDto = ApiResponseDto.of(ResponseSuccessCode.RESERVATION_SLOTS, reservationSlotDtos);
+
+        return ResponseEntity.ok(responseDto);
+    }
 }
