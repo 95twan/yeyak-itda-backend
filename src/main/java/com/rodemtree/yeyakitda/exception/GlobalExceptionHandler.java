@@ -42,7 +42,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ApiResponseDto<?>> handleEntityNotFoundException(EntityNotFoundException e) {
-        ApiResponseDto<?> responseDto = ApiResponseDto.of(ResponseErrorCode.RESOURCE_NOT_FOUND);
+        ApiResponseDto<?> responseDto;
+        if (e.getMessage() != null) {
+            responseDto = ApiResponseDto.of(HttpStatus.NOT_FOUND.value(), e.getMessage());
+        } else {
+            responseDto = ApiResponseDto.of(ResponseErrorCode.RESOURCE_NOT_FOUND);
+        }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseDto);
     }
 
