@@ -18,11 +18,11 @@ public class EventEntity extends BaseEntity{
     @Column(name = "title", length = 100, nullable = false)
     private String title;
 
-    @Column(name = "banner_image_url", length = 256, nullable = false)
-    private String bannerImageUrl;
-
     @Column(name = "content", columnDefinition = "TEXT", nullable = false)
     private String content;
+
+    @Column(name = "banner_image_url", length = 256, nullable = false)
+    private String bannerImageUrl;
 
     @Column(name = "start_date", nullable = false)
     private LocalDateTime startDate;
@@ -30,19 +30,15 @@ public class EventEntity extends BaseEntity{
     @Column(name = "end_date", nullable = false)
     private LocalDateTime endDate;
 
-    private EventEntity(String title, String bannerImageUrl, String content, LocalDateTime startDate, LocalDateTime endDate) {
+    private EventEntity(String title,  String content, String bannerImageUrl, LocalDateTime startDate, LocalDateTime endDate) {
         this.title = title;
-        this.bannerImageUrl = bannerImageUrl;
         this.content = content;
+        this.bannerImageUrl = bannerImageUrl;
         this.startDate = startDate;
         this.endDate = endDate;
     }
 
-    public static EventEntity of(String title, String bannerImageUrl, String content, LocalDateTime startDate, LocalDateTime endDate) {
-        return new EventEntity(title, bannerImageUrl, content, startDate, endDate);
-    }
-
-    public static EventEntity of(String title, String bannerImageUrl, String content) {
-        return EventEntity.of(title, bannerImageUrl, content, null, null);
+    public static EventEntity of(String title, String content, String bannerImageUrl,  LocalDateTime startDate, LocalDateTime endDate) {
+        return new EventEntity(title, content, bannerImageUrl, startDate, endDate);
     }
 }
