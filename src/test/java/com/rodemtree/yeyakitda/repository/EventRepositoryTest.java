@@ -59,8 +59,8 @@ class EventRepositoryTest {
     private EventEntity createEvent(String title, LocalDateTime startDate, LocalDateTime endDate) {
         return EventEntity.of(
                 title,
-                "http://banner.url",
                 "content",
+                "http://banner.url",
                 startDate,
                 endDate
         );
