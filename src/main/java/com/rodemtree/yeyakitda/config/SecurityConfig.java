@@ -38,7 +38,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/reissue", "/api/auth/register").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/restaurants", "/api/restaurants/**", "/api/events/banners").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/restaurants", "/api/restaurants/**", "/api/events/**", "/api/restaurant-groups").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

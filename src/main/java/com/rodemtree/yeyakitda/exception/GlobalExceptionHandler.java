@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.UnsatisfiedServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -81,6 +82,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponseDto<?>> handleReservationException(ReservationException e) {
         ApiResponseDto<?> responseDto = ApiResponseDto.of(HttpStatus.CONFLICT.value(), e.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(responseDto);
+    }
+
+    @ExceptionHandler(UnsatisfiedServletRequestParameterException.class)
+    public ResponseEntity<ApiResponseDto<?>> handleUnsatisfiedServletRequestParameterException(UnsatisfiedServletRequestParameterException e) {
+        ApiResponseDto<?> responseDto = ApiResponseDto.of(HttpStatus.BAD_REQUEST.value(), e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(responseDto);
     }
 
     @ExceptionHandler(Exception.class)

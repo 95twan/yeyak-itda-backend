@@ -4,7 +4,9 @@ import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.rodemtree.yeyakitda.dto.request.RestaurantSearchConditionDto;
 import com.rodemtree.yeyakitda.entity.QRestaurantEntity;
+import com.rodemtree.yeyakitda.entity.QRestaurantThemeMappingEntity;
 import com.rodemtree.yeyakitda.entity.RestaurantEntity;
+import com.rodemtree.yeyakitda.entity.ThemeEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -59,5 +61,19 @@ public class RestaurantRepositoryCustomImpl implements RestaurantRepositoryCusto
         long total = count == null ? 0 : count;
 
         return new PageImpl<>(content, pageable, total);
+    }
+
+    // Todo - test 작성
+    @Override
+    public List<RestaurantEntity> findTop10ByTheme(ThemeEntity theme) {
+        QRestaurantThemeMappingEntity mapping = QRestaurantThemeMappingEntity.restaurantThemeMappingEntity;
+
+        return jpaQueryFactory
+                .select(mapping.restaurant)
+                .from(mapping)
+                .where(mapping.theme.eq(theme))
+                .orderBy(mapping.id.desc())
+                .limit(10)
+                .fetch();
     }
 }
