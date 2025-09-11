@@ -17,6 +17,8 @@ public interface RestaurantMapper {
     @Mapping(source = "thumbnailImage.imageUrl", target = "thumbnailImageUrl")
     RestaurantDto restaurantEntityToRestaurantDto(RestaurantEntity entity);
 
+    List<RestaurantDto> restaurantEntitiesToRestaurantDtos(List<RestaurantEntity> entities);
+
     @Mapping(source = "entity.user.id", target = "userId")
     @Mapping(source = "images", target = "imageUrls")
     @Mapping(target = "tags", ignore = true)

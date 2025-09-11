@@ -16,6 +16,7 @@ public enum ResponseSuccessCode {
     RESERVATION_CREATE(HttpStatus.CREATED.value(), "성공적으로 예약이 완료되었습니다."),
     USER_INFO(HttpStatus.OK.value(), "성공적으로 사용자 정보를 조회했습니다."),
     RESERVATION_SLOTS(HttpStatus.OK.value(), "성공적으로 예약 슬롯을 조회했습니다."),
+    RESTAURANT_THEME_GROUP(HttpStatus.OK.value(), "성공적으로 테마 별 식당을 조회했습니다."),
     EVENT_BANNERS(HttpStatus.OK.value(), "성공적으로 이벤트 배너를 조회했습니다."),
     EVENT_DETAIL(HttpStatus.OK.value(), "성공적으로 이벤트 상세 정보를 조회했습니다."),
     RESERVATION_INFO(HttpStatus.OK.value(), "성공적으로 사용자 예약 정보를 조회했습니다."),
