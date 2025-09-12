@@ -179,6 +179,28 @@ class RestaurantServiceTest {
     }
 
     @Test
+    @DisplayName("성공 - 테마 이름으로 식당 목록을 조회하면 식당 DTO 페이지를 반환한다.")
+    void searchRestaurantsByThemeTest() {
+        // Given
+        String theme = "인기 식당";
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Page<RestaurantEntity> restaurantEntities = new PageImpl<>(List.of(createRestaurant("테스트 식당")), pageable, 1);
+
+        given(restaurantRepository.findByTheme(theme, pageable)).willReturn(restaurantEntities);
+
+        // When
+        Page<RestaurantDto> result = restaurantService.searchRestaurantsByTheme(theme, pageable);
+
+        // Then
+        then(restaurantRepository).should().findByTheme(theme, pageable);
+
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().get(0).name()).isEqualTo("테스트 식당");
+
+    }
+
+    @Test
     @DisplayName("성공 - 식당 Id를 받아 식당을 조회하면 식당 DTO를 반환한다.")
     void getRestaurantDetailTest() {
         // Given

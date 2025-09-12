@@ -3,7 +3,10 @@ package com.rodemtree.yeyakitda.repository;
 import com.rodemtree.yeyakitda.config.JpaConfig;
 import com.rodemtree.yeyakitda.dto.request.RestaurantSearchConditionDto;
 import com.rodemtree.yeyakitda.entity.RestaurantEntity;
+import com.rodemtree.yeyakitda.entity.RestaurantThemeMappingEntity;
+import com.rodemtree.yeyakitda.entity.ThemeEntity;
 import com.rodemtree.yeyakitda.entity.UserEntity;
+import org.checkerframework.checker.units.qual.A;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.PropertyReferenceException;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,6 +35,12 @@ class RestaurantRepositoryTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ThemeRepository themeRepository;
+
+    @Autowired
+    private RestaurantThemeMappingRepository restaurantThemeMappingRepository;
 
     @BeforeEach
     void setUp() {
@@ -151,13 +161,45 @@ class RestaurantRepositoryTest {
         assertThat(result.getContent().size()).isEqualTo(2);
     }
 
+    @Test
+    @DisplayName("성공 - 테마 이름으로 식당 목록을 조회한다.")
+    void findByThemeTest() {
+        // Given
+        UserEntity user = userRepository.save(createUser());
+        ThemeEntity popularTheme = themeRepository.save(createTheme("인기 식당"));
+        ThemeEntity newTheme = themeRepository.save(createTheme("신규 식당"));
+
+        RestaurantEntity restaurant1 = restaurantRepository.save(createRestaurant(user, "인기 식당 1", "한식"));
+        RestaurantEntity restaurant2 = restaurantRepository.save(createRestaurant(user, "인기 식당 2", "한식"));
+        RestaurantEntity restaurant3 = restaurantRepository.save(createRestaurant(user, "신규 식당 1", "한식"));
+
+        restaurantThemeMappingRepository.save(RestaurantThemeMappingEntity.of(restaurant1, popularTheme));
+        restaurantThemeMappingRepository.save(RestaurantThemeMappingEntity.of(restaurant2, popularTheme));
+        restaurantThemeMappingRepository.save(RestaurantThemeMappingEntity.of(restaurant3, newTheme));
+
+        String theme = "인기 식당";
+        Pageable pageable = PageRequest.of(0, 10);
+
+        // When
+        Page<RestaurantEntity> result = restaurantRepository.findByTheme(theme, pageable);
+
+        // Then
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getContent()).extracting(RestaurantEntity::getName)
+                .containsExactlyInAnyOrder("인기 식당 1", "인기 식당 2");
+    }
+
 
     private RestaurantEntity createRestaurant(UserEntity user) {
         return createRestaurant(user, "test-category");
     }
 
     private RestaurantEntity createRestaurant(UserEntity user, String category) {
-        return createRestaurant(user, "test-name", "test-address", "test-description", category);
+        return createRestaurant(user, "test-name", category);
+    }
+
+    private RestaurantEntity createRestaurant(UserEntity user, String name, String category) {
+        return createRestaurant(user, name, "test-address", "test-description", category);
     }
 
     private RestaurantEntity createRestaurant(UserEntity user, String name, String address, String description) {
@@ -186,5 +228,9 @@ class RestaurantRepositoryTest {
                 .build();
         userEntity.setDefaultRole();
         return userEntity;
+    }
+
+    private ThemeEntity createTheme(String title) {
+        return ThemeEntity.of(title, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
     }
 }

@@ -1,12 +1,12 @@
 package com.rodemtree.yeyakitda.repository;
 
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.Order;
+import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.PathBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.rodemtree.yeyakitda.dto.request.RestaurantSearchConditionDto;
-import com.rodemtree.yeyakitda.entity.QRestaurantEntity;
-import com.rodemtree.yeyakitda.entity.QRestaurantThemeMappingEntity;
-import com.rodemtree.yeyakitda.entity.RestaurantEntity;
-import com.rodemtree.yeyakitda.entity.ThemeEntity;
+import com.rodemtree.yeyakitda.entity.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -75,5 +75,33 @@ public class RestaurantRepositoryCustomImpl implements RestaurantRepositoryCusto
                 .orderBy(mapping.id.desc())
                 .limit(10)
                 .fetch();
+    }
+
+    @Override
+    public Page<RestaurantEntity> findByTheme(String themeTitle, Pageable pageable) {
+        QRestaurantEntity restaurant = QRestaurantEntity.restaurantEntity;
+        QRestaurantThemeMappingEntity mapping = QRestaurantThemeMappingEntity.restaurantThemeMappingEntity;
+        QThemeEntity theme = QThemeEntity.themeEntity;
+
+        List<RestaurantEntity> content = jpaQueryFactory
+                .select(mapping.restaurant)
+                .from(mapping)
+                .join(mapping.theme, theme)
+                .where(mapping.theme.title.eq(themeTitle))
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .orderBy(mapping.restaurant.rating.desc())
+                .fetch();
+
+        Long count = jpaQueryFactory
+                .select(mapping.restaurant.count())
+                .from(mapping)
+                .join(mapping.theme, theme)
+                .where(mapping.theme.title.eq(themeTitle))
+                .fetchOne();
+
+        long total = count == null ? 0 : count;
+
+        return new PageImpl<>(content, pageable, total);
     }
 }

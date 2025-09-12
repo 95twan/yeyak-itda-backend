@@ -41,6 +41,11 @@ public class RestaurantService {
         return restaurantEntities.map(restaurantMapper::restaurantEntityToRestaurantDto);
     }
 
+    public Page<RestaurantDto> searchRestaurantsByTheme(String themeTitle, Pageable pageable) {
+        Page<RestaurantEntity> restaurantEntities = restaurantRepository.findByTheme(themeTitle, pageable);
+        return restaurantEntities.map(restaurantMapper::restaurantEntityToRestaurantDto);
+    }
+
     public RestaurantDetailDto getRestaurantDetail(Long restaurantId, LocalDate date) {
         RestaurantEntity restaurantEntity = restaurantRepository.findById(restaurantId).orElseThrow(EntityNotFoundException::new);
         List<RestaurantImageEntity> restaurantImageEntities = restaurantImageRepository.findByRestaurant_Id(restaurantId);

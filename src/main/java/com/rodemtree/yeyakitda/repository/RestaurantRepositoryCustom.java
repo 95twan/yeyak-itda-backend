@@ -11,4 +11,5 @@ import java.util.List;
 public interface RestaurantRepositoryCustom {
     Page<RestaurantEntity> search(RestaurantSearchConditionDto condition, Pageable pageable);
     List<RestaurantEntity> findTop10ByTheme(ThemeEntity theme);
+    Page<RestaurantEntity> findByTheme(String themeTitle, Pageable pageable);
 }
