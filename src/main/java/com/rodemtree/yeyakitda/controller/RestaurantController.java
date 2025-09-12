@@ -39,9 +39,24 @@ public class RestaurantController {
             @ModelAttribute RestaurantSearchConditionDto condition,
             @PageableDefault(size = 12, page = 0, sort = {"rating"}, direction = Sort.Direction.DESC) Pageable pageable
     ) {
+
         Page<RestaurantDto> restaurants = restaurantService.searchRestaurants(condition, pageable);
+        return createPagedResponse(restaurants);
+    }
+
+    @GetMapping(params = "theme")
+    public ResponseEntity<ApiResponseDto<PagedResponseDto<RestaurantDto>>> searchRestaurantsByTheme(
+            @RequestParam String theme,
+            @PageableDefault(size = 12, page = 0) Pageable pageable
+    ) {
+        Page<RestaurantDto> restaurants = restaurantService.searchRestaurantsByTheme(theme, pageable);
+        return createPagedResponse(restaurants);
+    }
+
+    private ResponseEntity<ApiResponseDto<PagedResponseDto<RestaurantDto>>> createPagedResponse(Page<RestaurantDto> restaurants) {
         PagedResponseDto<RestaurantDto> pagedResponseDto = PagedResponseDto.of(restaurants);
 
+        // Todo - 빼도 될거 같은데
         if(restaurants.isEmpty()) {
             ApiResponseDto<PagedResponseDto<RestaurantDto>> responseDto = new ApiResponseDto<>(
                     HttpStatus.OK.value(),

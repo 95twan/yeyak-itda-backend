@@ -209,6 +209,27 @@ class RestaurantControllerTest {
     }
 
     @Test
+    @DisplayName("성공 - 테마 이름으로 식당 목록을 요청하면 페이징된 해당 테마의 식당 목록을 반환한다.")
+    void searchRestaurantsWithThemeTitleTest() throws Exception {
+        // Given
+        String themeTitle = "인기 식당";
+        Pageable pageable = PageRequest.of(0, 12);
+        RestaurantDto restaurantDto = RestaurantDto.builder().name("테스트 식당").build();
+        Page<RestaurantDto> restaurantDtoPage = new PageImpl<>(List.of(restaurantDto), pageable, 0);
+        given(restaurantService.searchRestaurantsByTheme(themeTitle, pageable)).willReturn(restaurantDtoPage);
+
+        // When & Then
+        mockMvc.perform(get("/api/restaurants")
+                        .param("theme", themeTitle))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("성공적으로 식당 목록을 조회했습니다."))
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.data.content[0].name").value("테스트 식당"));
+
+        then(restaurantService).should().searchRestaurantsByTheme(themeTitle, pageable);
+    }
+
+    @Test
     @DisplayName("성공 - 식당 ID로 상세 조회를 요청하면, 200 OK와 함께 식당 상세 DTO를 반환한다.")
     void getRestaurantDetail() throws Exception {
         // Given
