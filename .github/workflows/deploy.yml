@@ -1,0 +1,58 @@
+name: Yeyak-itda CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-push:
+    # 이 작업이 실행될 가상 환경을 지정합니다. (Ubuntu 최신 버전)
+    runs-on: ubuntu-latest
+
+    # 작업 내에서 실행될 단계(step)들을 순서대로 정의합니다.
+    steps:
+      # 1. 소스 코드 체크아웃
+      # GitHub 저장소의 코드를 가상 환경으로 가져오는 단계입니다.
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # 2. JDK 17 설정
+      # 프로젝트 빌드에 필요한 Java 17 환경을 설정합니다.
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # 3. gradlew 파일에 실행 권한 부여
+      # Gradle Wrapper 스크립트를 실행할 수 있도록 권한을 줍니다.
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # 4. Gradle로 빌드 및 테스트
+      # 먼저 모든 테스트를 포함하여 빌드를 실행합니다. (./gradlew build)
+      # 이 단계에서 테스트가 하나라도 실패하면, 파이프라인은 즉시 중단되어
+      # 문제가 있는 코드가 Docker 이미지로 만들어지는 것을 막아줍니다.
+      - name: Build with Gradle
+        run: ./gradlew build
+
+      # 5. Docker Hub 로그인
+      # GitHub Secrets에 저장된 Docker Hub 사용자 이름과 토큰을 사용하여 안전하게 로그인합니다.
+      # 이 정보는 절대 코드에 직접 노출되지 않습니다.
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 6. Docker 이미지 빌드 및 푸시
+      # 직접 작성하신 Dockerfile을 사용하여 이미지를 빌드하고, Docker Hub에 푸시(업로드)합니다.
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          # Dockerfile이 있는 경로를 현재 디렉토리(.)로 지정합니다.
+          context: .
+          # 이미지를 Docker Hub로 푸시하도록 설정합니다.
+          push: true
+          # 이미지 태그를 'DockerHub계정명/이미지이름:latest' 형식으로 지정합니다.
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/yeyak-itda-backend:latest
