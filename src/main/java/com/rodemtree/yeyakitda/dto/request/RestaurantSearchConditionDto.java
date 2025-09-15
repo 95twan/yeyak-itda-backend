@@ -7,7 +7,6 @@ import java.util.Set;
 @Builder
 public record RestaurantSearchConditionDto(
         Set<String> categories,
-        String keyword,
-        String theme
+        String keyword
 ) {
 }
