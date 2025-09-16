@@ -1,0 +1,29 @@
+logging:
+  level:
+    com.rodemtree.projectboard: debug
+    org.springframework.web.servlet: debug
+    org.hibernate.orm.jdbc.bind: trace
+    org.springframework.security: DEBUG
+
+spring:
+  application:
+    name: yeyak-itda
+  datasource.url: jdbc:h2:mem:testdb
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+jwt:
+  secret: my-super-secret-key-for-jwt-should-be-long-enough
+  expiration:
+    access: 3600000
+    refresh: 604800000
+
+minio:
+  base-url: http://localhost:9000
+  endpoint: http://localhost:9000
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket-name: yeyak-itda

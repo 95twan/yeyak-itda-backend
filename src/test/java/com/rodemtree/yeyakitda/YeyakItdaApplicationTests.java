@@ -1,10 +1,10 @@
-package com.rodemtree.yeyakitdabackend;
+package com.rodemtree.yeyakitda;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class YeyakItdaBackendApplicationTests {
+class YeyakItdaApplicationTests {
 
     @Test
     void contextLoads() {

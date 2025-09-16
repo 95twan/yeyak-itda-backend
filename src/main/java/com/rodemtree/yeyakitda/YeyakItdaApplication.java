@@ -1,13 +1,13 @@
-package com.rodemtree.yeyakitdabackend;
+package com.rodemtree.yeyakitda;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class YeyakItdaBackendApplication {
+public class YeyakItdaApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(YeyakItdaBackendApplication.class, args);
+        SpringApplication.run(YeyakItdaApplication.class, args);
     }
 
 }

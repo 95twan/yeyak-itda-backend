@@ -1,0 +1,106 @@
+package com.rodemtree.yeyakitda.controller;
+
+import com.rodemtree.yeyakitda.dto.ReservationSlotDto;
+import com.rodemtree.yeyakitda.dto.RestaurantDetailDto;
+import com.rodemtree.yeyakitda.dto.RestaurantDto;
+import com.rodemtree.yeyakitda.dto.request.RestaurantSearchConditionDto;
+import com.rodemtree.yeyakitda.dto.response.ApiResponseDto;
+import com.rodemtree.yeyakitda.dto.response.PagedResponseDto;
+import com.rodemtree.yeyakitda.dto.response.ResponseErrorCode;
+import com.rodemtree.yeyakitda.dto.response.ResponseSuccessCode;
+import com.rodemtree.yeyakitda.exception.InvalidRequestException;
+import com.rodemtree.yeyakitda.service.ReservationSlotService;
+import com.rodemtree.yeyakitda.service.RestaurantService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.Clock;
+import java.time.LocalDate;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/restaurants")
+@RequiredArgsConstructor
+public class RestaurantController {
+
+    private final RestaurantService restaurantService;
+    private final Clock clock;
+    private final ReservationSlotService reservationSlotService;
+
+    @GetMapping
+    public ResponseEntity<ApiResponseDto<PagedResponseDto<RestaurantDto>>> searchRestaurants(
+            @ModelAttribute RestaurantSearchConditionDto condition,
+            @PageableDefault(size = 12, page = 0, sort = {"rating"}, direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+
+        Page<RestaurantDto> restaurants = restaurantService.searchRestaurants(condition, pageable);
+        return createPagedResponse(restaurants);
+    }
+
+    @GetMapping(params = "theme")
+    public ResponseEntity<ApiResponseDto<PagedResponseDto<RestaurantDto>>> searchRestaurantsByTheme(
+            @RequestParam String theme,
+            @PageableDefault(size = 12, page = 0) Pageable pageable
+    ) {
+        Page<RestaurantDto> restaurants = restaurantService.searchRestaurantsByTheme(theme, pageable);
+        return createPagedResponse(restaurants);
+    }
+
+    private ResponseEntity<ApiResponseDto<PagedResponseDto<RestaurantDto>>> createPagedResponse(Page<RestaurantDto> restaurants) {
+        PagedResponseDto<RestaurantDto> pagedResponseDto = PagedResponseDto.of(restaurants);
+
+        // Todo - 빼도 될거 같은데
+        if(restaurants.isEmpty()) {
+            ApiResponseDto<PagedResponseDto<RestaurantDto>> responseDto = new ApiResponseDto<>(
+                    HttpStatus.OK.value(),
+                    "검색 결과가 없습니다.",
+                    pagedResponseDto
+            );
+            return ResponseEntity.status(HttpStatus.OK).body(responseDto);
+        }
+
+        ApiResponseDto<PagedResponseDto<RestaurantDto>> responseDto = ApiResponseDto.of(ResponseSuccessCode.RESTAURANTS, pagedResponseDto);
+
+        return ResponseEntity.status(HttpStatus.OK).body(responseDto);
+    }
+
+    @GetMapping("/{restaurantId}")
+    public ResponseEntity<ApiResponseDto<RestaurantDetailDto>> getRestaurantDetail(
+            @PathVariable Long restaurantId,
+            @RequestParam(required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        LocalDate now = LocalDate.now(clock);
+
+        if (date.isBefore(now)) {
+            throw new InvalidRequestException(ResponseErrorCode.INVALID_PAST_DATE);
+        }
+
+        RestaurantDetailDto restaurantDetailDto = restaurantService.getRestaurantDetail(restaurantId, date);
+        ApiResponseDto<RestaurantDetailDto> responseDto = ApiResponseDto.of(ResponseSuccessCode.RESTAURANT, restaurantDetailDto);
+        return ResponseEntity.status(HttpStatus.OK).body(responseDto);
+    }
+
+    @GetMapping("/{restaurantId}/reservationSlots")
+    public ResponseEntity<ApiResponseDto<List<ReservationSlotDto>>> getRestaurantReservationSlots(
+            @PathVariable Long restaurantId,
+            @RequestParam(required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        LocalDate now = LocalDate.now(clock);
+
+        if (date.isBefore(now)) {
+            throw new InvalidRequestException(ResponseErrorCode.INVALID_PAST_DATE);
+        }
+
+        List<ReservationSlotDto> reservationSlotDtos = reservationSlotService.findReservationSlotsByDate(restaurantId, date);
+        ApiResponseDto<List<ReservationSlotDto>> responseDto = ApiResponseDto.of(ResponseSuccessCode.RESERVATION_SLOTS, reservationSlotDtos);
+
+        return ResponseEntity.ok(responseDto);
+    }
+}
