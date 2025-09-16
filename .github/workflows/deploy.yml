@@ -78,10 +78,10 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/yeyak-itda-backend:latest
-            docker stop yeyak-itda-backend-container || true
-            docker rm yeyak-itda-backend-container || true
-            docker run -d --name yeyak-itda-backend-container --network yeyak-itda-net -p 8080:8080 \
+            /usr/local/bin/docker pull ${{ secrets.DOCKERHUB_USERNAME }}/yeyak-itda-backend:latest
+            /usr/local/bin/docker stop yeyak-itda-backend-container || true
+            /usr/local/bin/docker rm yeyak-itda-backend-container || true
+            /usr/local/bin/docker run -d --name yeyak-itda-backend-container --network yeyak-itda-net -p 8080:8080 \
             -e SPRING_PROFILES_ACTIVE=prod \
             -e LOCAL_DB_URL=${{ secrets.DB_URL }} \
             -e LOCAL_DB_USERNAME=${{ secrets.DB_USERNAME }} \
