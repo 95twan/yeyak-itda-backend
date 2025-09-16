@@ -68,3 +68,29 @@ jobs:
           push: true
           # 이미지 태그를 'DockerHub계정명/이미지이름:latest' 형식으로 지정합니다.
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/yeyak-itda-backend:latest
+
+      # 7. Synology NAS에 배포 (CD)
+      - name: Deploy to Synology NAS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/yeyak-itda-backend:latest
+            docker stop yeyak-itda-backend-container || true
+            docker rm yeyak-itda-backend-container || true
+            docker run -d --name yeyak-itda-backend-container --network yeyak-itda-net -p 8080:8080 \
+            -e SPRING_PROFILES_ACTIVE=prod \
+            -e LOCAL_DB_URL=${{ secrets.DB_URL }} \
+            -e LOCAL_DB_USERNAME=${{ secrets.DB_USERNAME }} \
+            -e LOCAL_DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+            -e MONGO_URI=${{ secrets.MONGO_URI }} \
+            -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
+            -e MINIO_BASE_URL=${{ secrets.MINIO_BASE_URL }} \
+            -e MINIO_ENDPOINT=${{ secrets.MINIO_ENDPOINT }} \
+            -e MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY }} \
+            -e MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }} \
+            -e MINIO_BUCKET=${{ secrets.MINIO_BUCKET }} \
+            ${{ secrets.DOCKERHUB_USERNAME }}/yeyak-itda-backend:latest
