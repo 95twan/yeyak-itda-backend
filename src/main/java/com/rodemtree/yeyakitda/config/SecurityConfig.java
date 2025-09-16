@@ -23,6 +23,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @RequiredArgsConstructor
 @Configuration
@@ -35,6 +40,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
         return http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/reissue", "/api/auth/register").permitAll()
@@ -49,6 +55,29 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        // 요청을 허용할 출처(프론트엔드 주소)를 명시합니다.
+        // Synology NAS의 외부 접속 IP와 로컬 개발용 주소를 모두 추가해주는 것이 좋습니다.
+        configuration.setAllowedOrigins(List.of("http://116.123.110.162:80", "http://192.168.1.18:8888"));
+
+        // 허용할 HTTP 메서드를 지정합니다. (GET, POST, PUT, DELETE 등)
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+
+        // 요청 헤더에 모든 종류를 허용합니다.
+        configuration.setAllowedHeaders(List.of("*"));
+
+        // 자격 증명(쿠키, 인증 헤더 등)을 포함한 요청을 허용합니다.
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        // 모든 경로(/api/**)에 대해 위에서 정의한 CORS 설정을 적용합니다.
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     @Bean
