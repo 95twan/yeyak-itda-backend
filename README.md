@@ -58,6 +58,12 @@
 | 로그아웃 | DELETE | /api/auth/logout | 서버에 저장된 Refresh Token을 삭제합니다. |
 | 토큰 재발급 | POST | /api/auth/reissue | Refresh Token으로 새 토큰들을 발급합니다. |
 
+**사용자 API**
+
+| 기능 | Method | Endpoint | 설명 |
+| :---- | :---- | :---- | :---- |
+| 내 정보 조회 | GET | /api/users/me | 현재 로그인된 사용자의 정보를 조회합니다. |
+| 내 예약 목록 조회 | GET | /api/users/me/reservations | 현재 로그인된 사용자의 모든 예약 내역을 조회합니다. |
 
 **식당 API**
 
@@ -74,3 +80,11 @@
 | 예약 생성 | POST | /api/restaurants/{restaurantId}/reservations | 특정 슬롯에 예약을 생성합니다. |
 | 예약 취소 | DELETE | /api/restaurants/{restaurantId}/reservations/{reservationId} | 예약을 취소합니다. |
 | 리뷰 작성 | POST | /api/restaurants/{restaurantId}/reviews | 식당에 대한 리뷰와 사진을 등록합니다. |
+
+**이벤트 및 테마 API**
+
+| 기능 | Method | Endpoint | 설명 |
+| :---- | :---- | :---- | :---- |
+| 이벤트 배너 조회 | GET | /api/events/banners | 메인 페이지에 노출될 진행 중인 이벤트 배너 목록을 조회합니다. |
+| 이벤트 상세 조회 | GET | /api/events/{eventId} | 특정 이벤트의 상세 정보를 조회합니다. |
+| 테마별 식당 그룹 조회 | GET | /api/restaurant-groups?group=theme | 메인 페이지 노출용 테마별 식당 그룹 목록을 조회합니다. |
