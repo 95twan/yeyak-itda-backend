@@ -1,0 +1,44 @@
+logging:
+  level:
+    com.rodemtree.projectboard: debug
+    org.springframework.web.servlet: debug
+    org.hibernate.orm.jdbc.bind: trace
+    org.springframework.security: DEBUG
+
+spring:
+  application:
+    name: yeyak-itda
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    defer-datasource-initialization: true
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        default_batch_fetch_size: 100
+  data:
+    mongodb:
+      uri: ${MONGO_URI}
+  servlet:
+    multipart:
+      max-file-size: 10MB
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration:
+    access: 3600000
+    refresh: 604800000
+
+minio:
+  base-url: ${MINIO_BASE_URL}
+  endpoint: ${MINIO_ENDPOINT}
+  access-key: ${MINIO_ACCESS_KEY}
+  secret-key: ${MINIO_SECRET_KEY}
+  bucket-name: ${MINIO_BUCKET}
