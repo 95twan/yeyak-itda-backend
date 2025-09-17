@@ -83,17 +83,17 @@ class ReviewServiceTest {
         // Given
         Long restaurantId = 1L;
         Limit limit = Limit.of(10);
-        ReviewEntity reviewEntity1 = createReviewEntity(restaurantId, "이미지 있는 리뷰1", 5);
+        ReviewEntity reviewEntity1 = createReviewEntity(1L, "이미지 있는 리뷰1", 5);
         ReviewEntity reviewEntity2 = createReviewEntity(2L, "이미지 없는 리뷰2", 4);
         List<ReviewEntity> reviewEntities = List.of(reviewEntity1, reviewEntity2);
         given(reviewRepository.findByRestaurant_IdOrderByCreatedAtDesc(restaurantId, limit)).willReturn(reviewEntities);
 
+
         ReviewImageEntity reviewImage1 = createReviewImage(reviewEntity1, "url1");
         ReviewImageEntity reviewImage2 = createReviewImage(reviewEntity1, "url2");
         List<ReviewImageEntity> images = List.of(reviewImage1, reviewImage2);
-        given(reviewImageRepository.findByReview_Id(reviewEntity1.getId())).willReturn(images);
-        given(reviewImageRepository.findByReview_Id(reviewEntity2.getId())).willReturn(List.of());
 
+        given(reviewImageRepository.findByReview_IdIn(any())).willReturn(images);
 
         // When
         List<ReviewDto> result = reviewService.findTop10LatestReviews(restaurantId);
@@ -107,8 +107,7 @@ class ReviewServiceTest {
         assertThat(result.get(1).imageUrls()).isEmpty();
 
         then(reviewRepository).should().findByRestaurant_IdOrderByCreatedAtDesc(restaurantId, Limit.of(10));
-        then(reviewImageRepository).should().findByReview_Id(reviewEntity1.getId());
-        then(reviewImageRepository).should().findByReview_Id(reviewEntity2.getId());
+        then(reviewImageRepository).should().findByReview_IdIn(any());
     }
 
     @Test

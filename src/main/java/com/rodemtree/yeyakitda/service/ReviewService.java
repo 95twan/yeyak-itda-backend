@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,9 +33,18 @@ public class ReviewService {
     public List<ReviewDto> findTop10LatestReviews(Long restaurantId) {
         List<ReviewEntity> reviewEntities = reviewRepository.findByRestaurant_IdOrderByCreatedAtDesc(restaurantId, Limit.of(10));
 
+        List<Long> reviewIds = reviewEntities.stream()
+                .map(ReviewEntity::getId)
+                .toList();
+
+        List<ReviewImageEntity> reviewImages = reviewImageRepository.findByReview_IdIn(reviewIds);
+
+        Map<Long, List<ReviewImageEntity>> imagesByReviewId = reviewImages.stream()
+                .collect(Collectors.groupingBy(image -> image.getReview().getId()));
+
         return reviewEntities.stream()
                 .map(review -> {
-                    List<ReviewImageEntity> images = reviewImageRepository.findByReview_Id(review.getId());
+                    List<ReviewImageEntity> images = imagesByReviewId.getOrDefault(review.getId(), List.of());
                     return reviewMapper.reviewEntityToReviewDto(review, images);
                 }).toList();
     }

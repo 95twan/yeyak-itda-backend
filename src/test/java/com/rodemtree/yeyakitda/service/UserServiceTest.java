@@ -180,13 +180,13 @@ class UserServiceTest {
                 createReservation(102L, userEntity, slot2, 4, ReservationStatus.RESERVED)
         );
 
-        given(reservationRepository.findByUser_Email(userEmail)).willReturn(reservations);
+        given(reservationRepository.findByUser_EmailWithDetail(userEmail)).willReturn(reservations);
 
         // When
         List<ReservationDto> result = userService.getUserReservations(userEmail);
 
         // Then
-        then(reservationRepository).should().findByUser_Email(userEmail);
+        then(reservationRepository).should().findByUser_EmailWithDetail(userEmail);
         assertThat(result).hasSize(2);
 
         assertThat(result.get(0).reservationId()).isEqualTo(101L);
