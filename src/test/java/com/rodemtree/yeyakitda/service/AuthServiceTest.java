@@ -85,14 +85,12 @@ class AuthServiceTest {
     void deleteRefreshTokenTest() {
         // Given
         String email = "test@test.com";
-        RefreshTokenEntity refreshTokenEntity = mock(RefreshTokenEntity.class);
-        given(refreshTokenRepository.findByUser_Email(email)).willReturn(Optional.of(refreshTokenEntity));
 
         // When
         authService.deleteRefreshToken(email);
 
         // Then
-        then(refreshTokenRepository).should().delete(refreshTokenEntity);
+        then(refreshTokenRepository).should().deleteByUserEmail(email);
 
     }
 
@@ -106,7 +104,7 @@ class AuthServiceTest {
         given(jwtUtil.getType(refreshToken)).willReturn("refresh");
 
         RefreshTokenEntity refreshTokenEntity = mock(RefreshTokenEntity.class);
-        given(refreshTokenRepository.findByToken(refreshToken)).willReturn(Optional.of(refreshTokenEntity));
+        given(refreshTokenRepository.findByTokenWithUser(refreshToken)).willReturn(Optional.of(refreshTokenEntity));
 
         UserEntity userEntity = mock(UserEntity.class);
         given(refreshTokenEntity.getUser()).willReturn(userEntity);

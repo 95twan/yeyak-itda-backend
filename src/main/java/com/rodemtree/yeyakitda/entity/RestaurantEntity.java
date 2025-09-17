@@ -15,14 +15,14 @@ public class RestaurantEntity extends BaseEntity {
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
     @Column(name = "name", length = 32, nullable = false)
     private String name;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "thumbnail_image_id")
     private RestaurantImageEntity thumbnailImage;
 

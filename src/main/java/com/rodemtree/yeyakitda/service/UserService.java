@@ -55,7 +55,7 @@ public class UserService {
     }
 
     public List<ReservationDto> getUserReservations(String userEmail) {
-        List<ReservationEntity> reservationEntities = reservationRepository.findByUser_Email(userEmail);
+        List<ReservationEntity> reservationEntities = reservationRepository.findByUser_EmailWithDetail(userEmail);
 
         return reservationMapper.reservationEntitiesToReservationDtos(reservationEntities);
     }

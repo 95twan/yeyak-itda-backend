@@ -82,7 +82,7 @@ class RefreshTokenRepositoryTest {
         refreshTokenRepository.save(createRefreshToken(userEntity, token));
 
         // When & Then
-        assertThat(refreshTokenRepository.findByToken(token)).isNotEmpty();
+        assertThat(refreshTokenRepository.findByTokenWithUser(token)).isNotEmpty();
     }
 
     @Test
@@ -92,7 +92,7 @@ class RefreshTokenRepositoryTest {
         String notExisttoken = "refresh-token";
 
         // When & Then
-        assertThat(refreshTokenRepository.findByToken(notExisttoken)).isEmpty();
+        assertThat(refreshTokenRepository.findByTokenWithUser(notExisttoken)).isEmpty();
     }
 
     private UserEntity createUser() {

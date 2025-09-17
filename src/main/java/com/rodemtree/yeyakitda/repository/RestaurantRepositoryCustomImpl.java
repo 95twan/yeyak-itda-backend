@@ -47,6 +47,7 @@ public class RestaurantRepositoryCustomImpl implements RestaurantRepositoryCusto
 
         List<RestaurantEntity> content = jpaQueryFactory
                 .selectFrom(restaurant)
+                .leftJoin(restaurant.thumbnailImage).fetchJoin()
                 .where(builder)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -67,10 +68,13 @@ public class RestaurantRepositoryCustomImpl implements RestaurantRepositoryCusto
     @Override
     public List<RestaurantEntity> findTop10ByTheme(ThemeEntity theme) {
         QRestaurantThemeMappingEntity mapping = QRestaurantThemeMappingEntity.restaurantThemeMappingEntity;
+        QRestaurantEntity restaurant = QRestaurantEntity.restaurantEntity;
 
         return jpaQueryFactory
                 .select(mapping.restaurant)
                 .from(mapping)
+                .join(mapping.restaurant, restaurant)
+                .leftJoin(restaurant.thumbnailImage).fetchJoin()
                 .where(mapping.theme.eq(theme))
                 .orderBy(mapping.id.desc())
                 .limit(10)
@@ -79,7 +83,6 @@ public class RestaurantRepositoryCustomImpl implements RestaurantRepositoryCusto
 
     @Override
     public Page<RestaurantEntity> findByTheme(String themeTitle, Pageable pageable) {
-        QRestaurantEntity restaurant = QRestaurantEntity.restaurantEntity;
         QRestaurantThemeMappingEntity mapping = QRestaurantThemeMappingEntity.restaurantThemeMappingEntity;
         QThemeEntity theme = QThemeEntity.themeEntity;
 
@@ -87,6 +90,7 @@ public class RestaurantRepositoryCustomImpl implements RestaurantRepositoryCusto
                 .select(mapping.restaurant)
                 .from(mapping)
                 .join(mapping.theme, theme)
+                .leftJoin(mapping.restaurant.thumbnailImage).fetchJoin()
                 .where(mapping.theme.title.eq(themeTitle))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())

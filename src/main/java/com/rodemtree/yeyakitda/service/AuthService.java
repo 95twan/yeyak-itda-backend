@@ -38,14 +38,14 @@ public class AuthService {
 
     @Transactional
     public void deleteRefreshToken(String email) {
-        refreshTokenRepository.findByUser_Email(email).ifPresent(refreshTokenRepository::delete);
+        refreshTokenRepository.deleteByUserEmail(email);
     }
 
 
     @Transactional
     public LoginSuccessDto reissueToken(String refreshToken) {
         if (!jwtUtil.isTokenValid(refreshToken) || !"refresh".equals(jwtUtil.getType(refreshToken))) throw new InvalidTokenException();
-        RefreshTokenEntity refreshTokenEntity = refreshTokenRepository.findByToken(refreshToken).orElseThrow(InvalidTokenException::new);
+        RefreshTokenEntity refreshTokenEntity = refreshTokenRepository.findByTokenWithUser(refreshToken).orElseThrow(InvalidTokenException::new);
 
         UserEntity userEntity = refreshTokenEntity.getUser();
         JwtUserInfoDto userInfoDto = JwtUserInfoDto.of(userEntity.getEmail(), userEntity.getRole());
