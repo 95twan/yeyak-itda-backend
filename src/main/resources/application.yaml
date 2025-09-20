@@ -4,6 +4,7 @@ logging:
     org.springframework.web.servlet: debug
     org.hibernate.orm.jdbc.bind: trace
     org.springframework.security: DEBUG
+    org.springframework.data.redis: trace
 
 spring:
   application:

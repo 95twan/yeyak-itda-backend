@@ -3,7 +3,10 @@ logging:
     com.rodemtree.projectboard: debug
     org.springframework.web.servlet: debug
     org.hibernate.orm.jdbc.bind: trace
-    org.springframework.security: DEBUG
+    org.springframework.security: debug
+    org.springframework.data.redis: debug
+    org.springframework.cache: trace
+#    io.lettuce.core.protocol: debug
 
 spring:
   application:
