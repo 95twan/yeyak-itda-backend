@@ -9,6 +9,7 @@ import com.rodemtree.yeyakitda.mapper.RestaurantMapper;
 import com.rodemtree.yeyakitda.repository.RestaurantRepository;
 import com.rodemtree.yeyakitda.repository.ThemeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -25,6 +26,7 @@ public class RestaurantGroupService {
     private final RestaurantMapper restaurantMapper;
     private final Clock clock;
 
+    @Cacheable("themeGroupedRestaurants")
     public List<RestaurantGroupDto> findThemeGroupedRestaurants() {
         LocalDateTime now = LocalDateTime.now(clock);
         List<ThemeEntity> themes = themeRepository.findInProgressThemes(now);
