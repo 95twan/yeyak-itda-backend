@@ -10,6 +10,7 @@ import com.rodemtree.yeyakitda.repository.ReservationSlotRepository;
 import com.rodemtree.yeyakitda.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +27,12 @@ public class ReservationService {
     @Transactional
     public void createReservation(String userEmail, Long restaurantId, ReservationRequestDto reservationRequestDto) {
         UserEntity userEntity = userRepository.findByEmail(userEmail).orElseThrow(() -> new EntityNotFoundException("유저를 찾을 수 없습니다."));
-        ReservationSlotEntity reservationSlotEntity = reservationSlotRepository.findById(reservationRequestDto.slotId()).orElseThrow(() -> new EntityNotFoundException("해당하는 예약 슬롯을 찾을 수 없습니다."));
+        ReservationSlotEntity reservationSlotEntity;
+        try {
+            reservationSlotEntity = reservationSlotRepository.findByIdWithPessimisticLock(reservationRequestDto.slotId()).orElseThrow(() -> new EntityNotFoundException("해당하는 예약 슬롯을 찾을 수 없습니다."));
+        } catch (PessimisticLockingFailureException e) {
+            throw new ReservationException("예약이 마감되었거나 다른 사용자가 선점했습니다. 다른 시간을 선택해주세요.");
+        }
 
         if (!reservationSlotEntity.getRestaurant().getId().equals(restaurantId))
             throw new AccessDeniedException("해당 식당의 예약 슬롯이 아닙니다.");
@@ -48,7 +54,7 @@ public class ReservationService {
 
     @Transactional
     public void cancelReservation(String userEmail, Long restaurantId, Long reservationId) {
-        ReservationEntity reservationEntity = reservationRepository.findById(reservationId).orElseThrow(() -> new EntityNotFoundException("해당 예약을 찾을 수 없습니다."));
+        ReservationEntity reservationEntity = reservationRepository.findByIdWithUser(reservationId).orElseThrow(() -> new EntityNotFoundException("해당 예약을 찾을 수 없습니다."));
 
         if (!reservationEntity.getRestaurant().getId().equals(restaurantId))
             throw new AccessDeniedException("해당 식당의 예약 정보가 아닙니다.");
@@ -56,9 +62,16 @@ public class ReservationService {
         String reservationOwnerEmail = reservationEntity.getUser().getEmail();
         if (!reservationOwnerEmail.equals(userEmail)) throw new AccessDeniedException("예약을 취소할 권한이 없습니다.");
 
-        reservationEntity.cancel();
+        ReservationSlotEntity reservationSlotEntity;
+        try {
+            reservationSlotEntity = reservationSlotRepository.findByIdWithPessimisticLock(reservationEntity.getReservationSlot().getId())
+                    .orElseThrow(() -> new EntityNotFoundException("해당하는 예약 슬롯을 찾을 수 없습니다."));
 
-        ReservationSlotEntity reservationSlotEntity = reservationEntity.getReservationSlot();
+        } catch (PessimisticLockingFailureException e) {
+            throw new ReservationException("예약 취소에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+        }
+
         reservationSlotEntity.removeReservedCapacity(reservationEntity.getHeadCount());
+        reservationEntity.cancel();
     }
 }

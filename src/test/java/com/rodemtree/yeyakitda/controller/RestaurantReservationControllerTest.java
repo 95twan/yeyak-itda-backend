@@ -3,6 +3,7 @@ package com.rodemtree.yeyakitda.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rodemtree.yeyakitda.config.TestSecurityConfig;
 import com.rodemtree.yeyakitda.dto.request.ReservationRequestDto;
+import com.rodemtree.yeyakitda.exception.ReservationException;
 import com.rodemtree.yeyakitda.security.CustomUserDetails;
 import com.rodemtree.yeyakitda.service.ReservationService;
 import com.rodemtree.yeyakitda.service.UserDetailsServiceImpl;
@@ -93,6 +94,30 @@ class RestaurantReservationControllerTest {
                 .andExpect(status().isUnauthorized());
 
         then(reservationService).should(never()).createReservation(anyString(), anyLong(), any(ReservationRequestDto.class));
+    }
+
+    @Test
+    @WithUserDetails(value = "test@test.com", setupBefore = TestExecutionEvent.TEST_EXECUTION, userDetailsServiceBeanName = "userDetailsServiceImpl")
+    @DisplayName("실패 - 예약 실패 시, 409 Conflict 상태 코드를 응답한다.")
+    void createReservationWhenReservationFailsTest() throws Exception {
+        // Given
+        String userEmail = "test@test.com";
+        Long restaurantId = 1L;
+        ReservationRequestDto reservationRequestDto = ReservationRequestDto.of(1L, 1);
+
+        // When & Then
+        willThrow(new ReservationException("예약이 마감되었거나 다른 사용자가 선점했습니다. 다른 시간을 선택해주세요."))
+                .given(reservationService).createReservation(eq(userEmail), eq(restaurantId), any(ReservationRequestDto.class));
+
+        mockMvc.perform(post("/api/restaurants/" + restaurantId + "/reservations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(reservationRequestDto))
+                        .with(csrf()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(HttpStatus.CONFLICT.value()))
+                .andExpect(jsonPath("$.message").value("예약이 마감되었거나 다른 사용자가 선점했습니다. 다른 시간을 선택해주세요."));
+
+        then(reservationService).should().createReservation(eq(userEmail), eq(restaurantId), any(ReservationRequestDto.class));
     }
 
     @Test

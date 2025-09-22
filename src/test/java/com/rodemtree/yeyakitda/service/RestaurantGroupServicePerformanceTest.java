@@ -1,39 +1,25 @@
 package com.rodemtree.yeyakitda.service;
 
-import com.rodemtree.yeyakitda.dto.RestaurantDto;
-import com.rodemtree.yeyakitda.dto.RestaurantGroupDto;
 import com.rodemtree.yeyakitda.entity.RestaurantEntity;
 import com.rodemtree.yeyakitda.entity.RestaurantThemeMappingEntity;
 import com.rodemtree.yeyakitda.entity.ThemeEntity;
 import com.rodemtree.yeyakitda.entity.UserEntity;
-import com.rodemtree.yeyakitda.mapper.RestaurantGroupMapper;
-import com.rodemtree.yeyakitda.mapper.RestaurantMapper;
 import com.rodemtree.yeyakitda.repository.RestaurantRepository;
 import com.rodemtree.yeyakitda.repository.RestaurantThemeMappingRepository;
 import com.rodemtree.yeyakitda.repository.ThemeRepository;
 import com.rodemtree.yeyakitda.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.parallel.Execution;
-import org.mapstruct.factory.Mappers;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.given;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -99,6 +85,14 @@ class RestaurantGroupServicePerformanceTest {
             }
             restaurantThemeMappingRepository.saveAll(mappings);
         }
+    }
+
+    @AfterEach
+    void cleanup() {
+        restaurantThemeMappingRepository.deleteAll();
+        restaurantRepository.deleteAll();
+        themeRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test
