@@ -14,6 +14,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -59,7 +60,7 @@ class ReservationServiceTest {
         ReservationSlotEntity slot = createReservationSlot(restaurantEntity, reservedCapacity);
         ReservationEntity reservationEntity = createReservation(user, slot);
         given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
-        given(reservationSlotRepository.findById(slotId)).willReturn(Optional.of(slot));
+        given(reservationSlotRepository.findByIdWithPessimisticLock(slotId)).willReturn(Optional.of(slot));
         given(reservationRepository.save(any())).willReturn(reservationEntity);
 
         // When
@@ -67,7 +68,7 @@ class ReservationServiceTest {
 
         // Then
         then(userRepository).should().findByEmail(userEmail);
-        then(reservationSlotRepository).should().findById(slotId);
+        then(reservationSlotRepository).should().findByIdWithPessimisticLock(slotId);
 
         ArgumentCaptor<ReservationEntity> reservationCaptor = ArgumentCaptor.forClass(ReservationEntity.class);
         then(reservationRepository).should().save(reservationCaptor.capture());
@@ -104,13 +105,34 @@ class ReservationServiceTest {
         // Given
         String userEmail = "test@test.com";
         Long restaurantId = 1L;
+        Long slotId = 1L;
+        int headCount = 2;
+
+        ReservationRequestDto reservationRequestDto = ReservationRequestDto.of(slotId, headCount);
+        UserEntity user = createUser(userEmail);
+        given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
+        given(reservationSlotRepository.findByIdWithPessimisticLock(slotId))
+                .willThrow(new PessimisticLockingFailureException("락 획득 실패"));
+
+        // When & Then
+        assertThatThrownBy(() -> reservationService.createReservation(userEmail, restaurantId, reservationRequestDto))
+                .isInstanceOf(ReservationException.class);
+        then(reservationRepository).should(never()).save(any());
+    }
+
+    @Test
+    @DisplayName("실패 - 예약 슬롯 락 획득을 실패하면 ReservationException을 던진다.")
+    void createReservationWhenPessimisticLockingFailureOccursTest() {
+        // Given
+        String userEmail = "test@test.com";
+        Long restaurantId = 1L;
         Long notExistSlotId = 1L;
         int headCount = 2;
 
         ReservationRequestDto reservationRequestDto = ReservationRequestDto.of(notExistSlotId, headCount);
         UserEntity user = createUser(userEmail);
         given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
-        given(reservationSlotRepository.findById(notExistSlotId)).willReturn(Optional.empty());
+        given(reservationSlotRepository.findByIdWithPessimisticLock(notExistSlotId)).willReturn(Optional.empty());
 
         // When & Then
         assertThatThrownBy(() -> reservationService.createReservation(userEmail, restaurantId, reservationRequestDto))
@@ -132,7 +154,7 @@ class ReservationServiceTest {
         ReservationSlotEntity slot = createReservationSlot(restaurant, 10, 5);
 
         given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
-        given(reservationSlotRepository.findById(reservationRequestDto.slotId())).willReturn(Optional.of(slot));
+        given(reservationSlotRepository.findByIdWithPessimisticLock(reservationRequestDto.slotId())).willReturn(Optional.of(slot));
 
         // When & Then
         assertThatThrownBy(() -> reservationService.createReservation(userEmail, requestedRestaurantId, reservationRequestDto))
@@ -159,7 +181,7 @@ class ReservationServiceTest {
         ReservationSlotEntity slot = createReservationSlot(restaurantEntity, reservedCapacity);
         ReservationEntity reservationEntity = createReservation(user, slot);
         given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
-        given(reservationSlotRepository.findById(slotId)).willReturn(Optional.of(slot));
+        given(reservationSlotRepository.findByIdWithPessimisticLock(slotId)).willReturn(Optional.of(slot));
         // When & Then
         assertThatThrownBy(() -> reservationService.createReservation(userEmail, restaurantId, reservationRequestDto))
                 .isInstanceOf(ReservationException.class);
@@ -183,14 +205,17 @@ class ReservationServiceTest {
 
         ReservationEntity reservation = createReservation(reservationId, user, slot, headCount, ReservationStatus.RESERVED);
 
-        given(reservationRepository.findById(reservationId)).willReturn(Optional.of(reservation));
+        given(reservationRepository.findByIdWithUser(reservationId)).willReturn(Optional.of(reservation));
+        given(reservationSlotRepository.findByIdWithPessimisticLock(slot.getId())).willReturn(Optional.of(slot));
 
         // When
         reservationService.cancelReservation(userEmail, restaurantId, reservationId);
 
         // Then
-        assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
+        then(reservationRepository).should().findByIdWithUser(reservationId);
+        then(reservationSlotRepository).should().findByIdWithPessimisticLock(slot.getId());
 
+        assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
         assertThat(slot.getReservedCapacity()).isEqualTo(initialReservedCapacity - headCount);
     }
 
@@ -209,14 +234,13 @@ class ReservationServiceTest {
         ReservationEntity reservation = createReservation(reservationId, user, slot, 2, ReservationStatus.RESERVED);
 
 
-        given(reservationRepository.findById(reservationId)).willReturn(Optional.of(reservation));
+        given(reservationRepository.findByIdWithUser(reservationId)).willReturn(Optional.of(reservation));
 
         // When & Then
         assertThatThrownBy(() -> reservationService.cancelReservation(userEmail, requestedRestaurantId, reservationId))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessage("해당 식당의 예약 정보가 아닙니다.");
 
-        // 예약 상태가 변경되지 않았는지 확인
         assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.RESERVED);
     }
 
@@ -234,7 +258,7 @@ class ReservationServiceTest {
         ReservationSlotEntity slot = createReservationSlot(restaurant, 10, 5);
         ReservationEntity reservation = createReservation(reservationId, user, slot, 2, ReservationStatus.RESERVED);
 
-        given(reservationRepository.findById(reservationId)).willReturn(Optional.of(reservation));
+        given(reservationRepository.findByIdWithUser(reservationId)).willReturn(Optional.of(reservation));
 
         // When & Then
         assertThatThrownBy(() -> reservationService.cancelReservation(otherUserEmail, restaurantId, reservationId))
@@ -252,8 +276,7 @@ class ReservationServiceTest {
         Long restaurantId = 1L;
         Long nonExistentReservationId = 999L;
 
-        // reservationId로 조회 시 Optional.empty()를 반환하도록 설정
-        given(reservationRepository.findById(nonExistentReservationId)).willReturn(Optional.empty());
+        given(reservationRepository.findByIdWithUser(nonExistentReservationId)).willReturn(Optional.empty());
 
         // When & Then
         assertThatThrownBy(() -> reservationService.cancelReservation(userEmail, restaurantId, nonExistentReservationId))
