@@ -25,7 +25,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -105,17 +104,17 @@ public class ReservationConcurrencyTest {
         CountDownLatch latch = new CountDownLatch(threadCount);
 
         // When
-        IntStream.range(0, threadCount).forEach(i ->
-                executorService.submit(() -> {
-                    try {
-                        reservationService.createReservation("test@test.com", restaurantId, ReservationRequestDto.of(slotId, 1));
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());
-                    } finally {
-                        latch.countDown();
-                    }
-                })
-        );
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    reservationService.createReservation("test@test.com", restaurantId, ReservationRequestDto.of(slotId, 1));
+                } catch (Exception e) {
+                    System.out.println(e.getMessage());
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
         latch.await();
 
         // Then
