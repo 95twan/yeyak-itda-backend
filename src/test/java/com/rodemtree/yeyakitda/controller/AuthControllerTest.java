@@ -12,6 +12,7 @@ import com.rodemtree.yeyakitda.exception.DuplicateException;
 import com.rodemtree.yeyakitda.repository.RefreshTokenRepository;
 import com.rodemtree.yeyakitda.repository.UserRepository;
 import com.rodemtree.yeyakitda.service.UserService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,6 +38,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,6 +71,9 @@ class AuthControllerTest {
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
 
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
+
     @MockitoBean
     private Clock clock;
 
@@ -91,6 +97,11 @@ class AuthControllerTest {
         userRepository.save(user);
 
         given(clock.instant()).willReturn(Instant.now());
+    }
+
+    @AfterEach
+    void tearDown() {
+        redisTemplate.getConnectionFactory().getConnection().flushAll();
     }
 
     @Test
@@ -331,7 +342,26 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("성공 - 유효한 토큰으로 로그아웃 요청 시, 200 OK와 함께 저장된 Refresh Token을 삭제한다.")
+    @DisplayName("실패 - 로그아웃 처리된 토큰으로 API 요청 시 401 에러를 응답한다.")
+    void accessWithBlacklistedAcessTokenTest() throws Exception {
+        // Given
+        LoginRequestDto dto = LoginRequestDto.of("test@test.com", "test1234!");
+        String responseBody = mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto))
+        ).andReturn().getResponse().getContentAsString();
+        String blacklistedToken = JsonPath.read(responseBody, "$.data.accessToken");
+        String key = "blacklist:" + blacklistedToken;
+        redisTemplate.opsForValue().set(key, "logout", 60, TimeUnit.SECONDS);
+
+        // When & Then
+        mockMvc.perform(get("/api/auth/test")
+                        .header("Authorization", "Bearer " + blacklistedToken))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("성공 - 유효한 토큰으로 로그아웃 요청 시, 200 OK와 함께 AccessToken을 블랙리스트에 저장하고 저장된 Refresh Token을 삭제한다.")
     void logoutTest() throws Exception {
         // Given
         LoginRequestDto dto = LoginRequestDto.of("test@test.com", "test1234!");
@@ -351,6 +381,10 @@ class AuthControllerTest {
 
         assertThat(refreshTokenRepository.findByUser_Email(dto.email())).isEmpty();
 
+        String key = "blacklist:" + accessToken;
+        assertThat(redisTemplate.hasKey(key)).isTrue();
+        assertThat(redisTemplate.opsForValue().get(key)).isEqualTo("logout");
+        assertThat(redisTemplate.getExpire(key, TimeUnit.SECONDS)).isGreaterThan(0L);
     }
 
     @Test

@@ -3,6 +3,8 @@ package com.rodemtree.yeyakitda.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rodemtree.yeyakitda.dto.response.ApiResponseDto;
 import com.rodemtree.yeyakitda.dto.response.ResponseErrorCode;
+import com.rodemtree.yeyakitda.exception.InvalidTokenException;
+import com.rodemtree.yeyakitda.service.AuthService;
 import com.rodemtree.yeyakitda.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -27,6 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final ObjectMapper objectMapper;
+    private final AuthService authService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -39,6 +42,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String accessToken = authorizationHeader.substring(BEARER_PREFIX.length());
 
         try {
+            if (authService.isBlacklist(accessToken)) {
+                throw new InvalidTokenException();
+            }
+
             if (jwtUtil.isTokenValid(accessToken) && "access".equals(jwtUtil.getType(accessToken))) {
                 String email = jwtUtil.getEmail(accessToken);
                 String role = jwtUtil.getRole(accessToken);
