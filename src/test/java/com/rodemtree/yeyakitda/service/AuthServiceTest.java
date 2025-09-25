@@ -12,15 +12,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.mock;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,6 +37,12 @@ class AuthServiceTest {
     
     @Mock
     private RefreshTokenRepository refreshTokenRepository;
+
+    @Mock
+    private RedisTemplate<String, Object> redisTemplate;
+
+    @Mock
+    private ValueOperations<String, Object> valueOperations;
 
     @Mock
     private JwtUtil jwtUtil;
@@ -81,17 +89,32 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("성공 - 사용자 이메일을 받으면, 해당 사용자의 Refresh Token을 삭제한다.")
-    void deleteRefreshTokenTest() {
+    @DisplayName("성공 - 로그아웃 요청 시, Refresh Token 삭제와 Access Token을 블랙리스트 등록을 한다.")
+    void logoutTest() {
         // Given
         String email = "test@test.com";
+        String accessToken = "accessToken";
+        LocalDateTime expireTime = LocalDateTime.now().plusSeconds(3600);
+
+        given(jwtUtil.isTokenValid(accessToken)).willReturn(true);
+        given(jwtUtil.getType(accessToken)).willReturn("access");
+        given(jwtUtil.getExpiration(accessToken)).willReturn(expireTime);
+        given(redisTemplate.opsForValue()).willReturn(valueOperations);
+
+        willDoNothing().given(refreshTokenRepository).deleteByUserEmail(email);
 
         // When
-        authService.deleteRefreshToken(email);
+        authService.logout(email, accessToken);
 
         // Then
         then(refreshTokenRepository).should().deleteByUserEmail(email);
 
+        then(valueOperations).should().set(
+                eq("blacklist:" + accessToken),
+                eq("logout"),
+                any(Long.class),
+                eq(TimeUnit.MILLISECONDS)
+        );
     }
 
     @Test

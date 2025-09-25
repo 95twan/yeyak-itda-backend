@@ -8,6 +8,7 @@ import com.rodemtree.yeyakitda.dto.response.ResponseSuccessCode;
 import com.rodemtree.yeyakitda.security.CustomUserDetails;
 import com.rodemtree.yeyakitda.service.AuthService;
 import com.rodemtree.yeyakitda.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -33,9 +34,13 @@ public class AuthController {
     }
 
     @DeleteMapping("/logout")
-    public ResponseEntity<ApiResponseDto<?>> logout(@AuthenticationPrincipal CustomUserDetails customUserDetails) {
+    public ResponseEntity<ApiResponseDto<?>> logout(
+            @AuthenticationPrincipal CustomUserDetails customUserDetails,
+            HttpServletRequest request
+    ) {
         String email = customUserDetails.getUsername();
-        authService.deleteRefreshToken(email);
+        String accessToken = request.getHeader("Authorization").substring(7);
+        authService.logout(email, accessToken);
         ApiResponseDto<?> responseDto = ApiResponseDto.of(ResponseSuccessCode.LOGOUT);
         return ResponseEntity.ok(responseDto);
     }

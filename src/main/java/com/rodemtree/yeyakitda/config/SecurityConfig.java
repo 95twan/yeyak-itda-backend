@@ -50,7 +50,7 @@ public class SecurityConfig {
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(customAuthenticationEntryPoint()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtAuthenticationFilter(jwtUtil, objectMapper), LoginAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthenticationFilter(jwtUtil, objectMapper, authService), LoginAuthenticationFilter.class)
                 .addFilterAt(loginAuthenticationFilter(authenticationManager), UsernamePasswordAuthenticationFilter.class)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
@@ -62,7 +62,6 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // 요청을 허용할 출처(프론트엔드 주소)를 명시합니다.
-        // Synology NAS의 외부 접속 IP와 로컬 개발용 주소를 모두 추가해주는 것이 좋습니다.
         configuration.setAllowedOrigins(List.of("http://yeyak-itda.rodemtree.synology.me", "http://116.123.110.162:80", "http://192.168.1.18:8888", "http://localhost:5173"));
 
         // 허용할 HTTP 메서드를 지정합니다. (GET, POST, PUT, DELETE 등)
@@ -106,8 +105,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtUtil jwtUtil, ObjectMapper objectMapper) {
-        return new JwtAuthenticationFilter(jwtUtil, objectMapper);
+    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtUtil jwtUtil, ObjectMapper objectMapper, AuthService authService) {
+        return new JwtAuthenticationFilter(jwtUtil, objectMapper, authService);
     }
 
     @Bean
