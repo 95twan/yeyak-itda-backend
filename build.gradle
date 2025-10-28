@@ -54,8 +54,11 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-    testImplementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo:4.21.0'
-    testImplementation 'com.h2database:h2'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:mongodb'
+    testImplementation 'org.testcontainers:mysql'
+
+//    testImplementation 'com.h2database:h2'
 }
 
 tasks.named('test') {

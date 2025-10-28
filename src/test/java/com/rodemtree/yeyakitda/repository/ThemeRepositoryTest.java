@@ -1,5 +1,6 @@
 package com.rodemtree.yeyakitda.repository;
 
+import com.rodemtree.yeyakitda.config.AbstractMySQLContainer;
 import com.rodemtree.yeyakitda.config.JpaConfig;
 import com.rodemtree.yeyakitda.entity.ThemeEntity;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,17 +17,16 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
+@ActiveProfiles("test")
 @Import(JpaConfig.class)
 @DisplayName("레포지토리 - 테마")
-class ThemeRepositoryTest {
+class ThemeRepositoryTest extends AbstractMySQLContainer {
 
     @Autowired
     private ThemeRepository themeRepository;
 
     @BeforeEach
     void setUp() {
-        themeRepository.deleteAll();
-
         LocalDateTime now = LocalDateTime.now();
 
         // 1. 현재 진행 중인 테마

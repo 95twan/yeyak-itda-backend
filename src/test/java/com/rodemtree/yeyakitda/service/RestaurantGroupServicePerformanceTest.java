@@ -1,5 +1,6 @@
 package com.rodemtree.yeyakitda.service;
 
+import com.rodemtree.yeyakitda.config.AbstractIntegrationContainer;
 import com.rodemtree.yeyakitda.entity.RestaurantEntity;
 import com.rodemtree.yeyakitda.entity.RestaurantThemeMappingEntity;
 import com.rodemtree.yeyakitda.entity.ThemeEntity;
@@ -23,9 +24,9 @@ import java.util.List;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Transactional // 테스트 후 데이터 롤백
+@Transactional
 @DisplayName("성능 테스트 - 식당 그룹 서비스")
-class RestaurantGroupServicePerformanceTest {
+class RestaurantGroupServicePerformanceTest extends AbstractIntegrationContainer {
 
     @Autowired
     private RestaurantGroupService restaurantGroupService;

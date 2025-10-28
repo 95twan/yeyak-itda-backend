@@ -5,7 +5,7 @@ import com.rodemtree.yeyakitda.entity.RefreshTokenEntity;
 import com.rodemtree.yeyakitda.entity.UserEntity;
 import com.rodemtree.yeyakitda.repository.RefreshTokenRepository;
 import com.rodemtree.yeyakitda.repository.UserRepository;
-import com.rodemtree.yeyakitda.util.JwtUtil;
+import com.rodemtree.yeyakitda.common.util.JwtUtil;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

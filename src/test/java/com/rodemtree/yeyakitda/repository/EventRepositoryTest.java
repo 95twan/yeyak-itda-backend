@@ -1,14 +1,15 @@
 package com.rodemtree.yeyakitda.repository;
 
+import com.rodemtree.yeyakitda.config.AbstractMySQLContainer;
 import com.rodemtree.yeyakitda.config.JpaConfig;
 import com.rodemtree.yeyakitda.dto.EventBannerDto;
 import com.rodemtree.yeyakitda.entity.EventEntity;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,17 +17,14 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
+@ActiveProfiles("test")
 @Import(JpaConfig.class)
 @DisplayName("리포지토리 - Event")
-class EventRepositoryTest {
+class EventRepositoryTest extends AbstractMySQLContainer {
 
     @Autowired
     private EventRepository eventRepository;
 
-    @BeforeEach
-    void setUp() {
-        eventRepository.deleteAll();
-    }
 
     @Test
     @DisplayName("성공 - 현재 날짜 기준으로 진행 중인 이벤트만 최신순으로 5개 조회한다.")

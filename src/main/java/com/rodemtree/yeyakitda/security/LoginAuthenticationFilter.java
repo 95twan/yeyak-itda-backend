@@ -9,7 +9,7 @@ import com.rodemtree.yeyakitda.dto.response.ResponseErrorCode;
 import com.rodemtree.yeyakitda.dto.response.ResponseSuccessCode;
 import com.rodemtree.yeyakitda.entity.UserRole;
 import com.rodemtree.yeyakitda.service.AuthService;
-import com.rodemtree.yeyakitda.util.JwtUtil;
+import com.rodemtree.yeyakitda.common.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
