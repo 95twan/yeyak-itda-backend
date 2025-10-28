@@ -1,4 +1,4 @@
-package com.rodemtree.yeyakitda.util;
+package com.rodemtree.yeyakitda.common.util;
 
 import com.rodemtree.yeyakitda.dto.JwtUserInfoDto;
 import io.jsonwebtoken.Claims;

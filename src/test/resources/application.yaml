@@ -4,14 +4,11 @@ logging:
     org.springframework.web.servlet: debug
     org.hibernate.orm.jdbc.bind: trace
     org.springframework.security: debug
-    org.springframework.data.redis: debug
-    org.springframework.cache: trace
-#    io.lettuce.core.protocol: debug
 
 spring:
   application:
     name: yeyak-itda
-  datasource.url: jdbc:h2:mem:testdb
+#  datasource.url: jdbc:h2:mem:testdb
   jpa:
     show-sql: true
     properties:

@@ -1,9 +1,7 @@
 logging:
   level:
-    com.rodemtree.projectboard: debug
-    org.springframework.web.servlet: debug
-    org.hibernate.orm.jdbc.bind: trace
-    org.springframework.security: DEBUG
+    com.rodemtree.projectboard: info
+    org.springframework.web.servlet: info
 
 spring:
   application:
@@ -18,10 +16,10 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: false
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
         default_batch_fetch_size: 100
   data:
     mongodb:
@@ -45,3 +43,12 @@ minio:
   access-key: ${MINIO_ACCESS_KEY}
   secret-key: ${MINIO_SECRET_KEY}
   bucket-name: ${MINIO_BUCKET}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: never

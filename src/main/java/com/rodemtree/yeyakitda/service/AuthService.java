@@ -7,7 +7,7 @@ import com.rodemtree.yeyakitda.entity.UserEntity;
 import com.rodemtree.yeyakitda.exception.InvalidTokenException;
 import com.rodemtree.yeyakitda.repository.RefreshTokenRepository;
 import com.rodemtree.yeyakitda.repository.UserRepository;
-import com.rodemtree.yeyakitda.util.JwtUtil;
+import com.rodemtree.yeyakitda.common.util.JwtUtil;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;

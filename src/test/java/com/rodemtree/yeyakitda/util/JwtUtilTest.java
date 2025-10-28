@@ -1,5 +1,6 @@
 package com.rodemtree.yeyakitda.util;
 
+import com.rodemtree.yeyakitda.common.util.JwtUtil;
 import com.rodemtree.yeyakitda.dto.JwtUserInfoDto;
 import com.rodemtree.yeyakitda.entity.UserRole;
 import org.junit.jupiter.api.BeforeEach;

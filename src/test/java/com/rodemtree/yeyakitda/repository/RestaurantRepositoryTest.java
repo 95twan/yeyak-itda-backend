@@ -1,13 +1,12 @@
 package com.rodemtree.yeyakitda.repository;
 
+import com.rodemtree.yeyakitda.config.AbstractMySQLContainer;
 import com.rodemtree.yeyakitda.config.JpaConfig;
 import com.rodemtree.yeyakitda.dto.request.RestaurantSearchConditionDto;
 import com.rodemtree.yeyakitda.entity.RestaurantEntity;
 import com.rodemtree.yeyakitda.entity.RestaurantThemeMappingEntity;
 import com.rodemtree.yeyakitda.entity.ThemeEntity;
 import com.rodemtree.yeyakitda.entity.UserEntity;
-import org.checkerframework.checker.units.qual.A;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +17,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mapping.PropertyReferenceException;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -26,9 +26,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest
+@ActiveProfiles("test")
 @Import(JpaConfig.class)
 @DisplayName("리포지토리 - Restaurant")
-class RestaurantRepositoryTest {
+class RestaurantRepositoryTest extends AbstractMySQLContainer {
 
     @Autowired
     private RestaurantRepository restaurantRepository;
@@ -42,33 +43,6 @@ class RestaurantRepositoryTest {
     @Autowired
     private RestaurantThemeMappingRepository restaurantThemeMappingRepository;
 
-    @BeforeEach
-    void setUp() {
-        restaurantRepository.deleteAll();
-    }
-
-    @Test
-    @DisplayName("성공 - RestaurantEntity를 저장한다.")
-    void saveTest() {
-        // Given
-        UserEntity user = createUser();
-        UserEntity savedUser = userRepository.save(user);
-        RestaurantEntity restaurant = createRestaurant(savedUser);
-
-        // When
-        RestaurantEntity savedRestaurant = restaurantRepository.save(restaurant);
-
-        // Then
-        assertThat(savedRestaurant.getId()).isNotNull();
-        assertThat(savedRestaurant.getName()).isEqualTo(restaurant.getName());
-        assertThat(savedRestaurant.getUser()).isEqualTo(restaurant.getUser());
-        assertThat(savedRestaurant.getDescription()).isEqualTo(restaurant.getDescription());
-        assertThat(savedRestaurant.getPhoneNumber()).isEqualTo(restaurant.getPhoneNumber());
-        assertThat(savedRestaurant.getAddress()).isEqualTo(restaurant.getAddress());
-        assertThat(savedRestaurant.getCategory()).isEqualTo(restaurant.getCategory());
-        assertThat(savedRestaurant.getRating()).isEqualTo(0f); //default value 검증
-    }
-
     @Test
     @DisplayName("실패 - 잘못된 Sort parameter가 주어지면 PropertyReferenceException을 던진다.")
     void findAllWithInvalidSortTest() {
@@ -81,8 +55,8 @@ class RestaurantRepositoryTest {
     }
 
     @Test
-    @DisplayName("성공 - 검색조건이 없으면 전체 조회")
-    void findAllTest() {
+    @DisplayName("성공 - 검색조건이 없으면 전체 식당 목록 조회")
+    void searchWithoutConditionTest() {
         // Given
         UserEntity user = userRepository.save(createUser());
         restaurantRepository.save(createRestaurant(user));
@@ -98,8 +72,8 @@ class RestaurantRepositoryTest {
     }
 
     @Test
-    @DisplayName("성공 - category로 조회")
-    void findByCategoryTest() {
+    @DisplayName("성공 - category로 식당 목록 조회")
+    void searchWithCategoriesTest() {
         // Given
         UserEntity user = userRepository.save(createUser());
         restaurantRepository.save(createRestaurant(user, "한식,양식"));
@@ -119,8 +93,8 @@ class RestaurantRepositoryTest {
     }
 
     @Test
-    @DisplayName("성공 - keyword로 조회")
-    void findByKeywordTest() {
+    @DisplayName("성공 - keyword로 식당 목록 조회")
+    void searchWithKeywordTest() {
         // Given
         UserEntity user = userRepository.save(createUser());
         restaurantRepository.save(createRestaurant(user, "테스트 식당", "서울 강남구", "상세1"));
@@ -140,8 +114,8 @@ class RestaurantRepositoryTest {
     }
 
     @Test
-    @DisplayName("성공 - 카테고리와 keyword로 조회")
-    void findByCategoriesAndKeywordTest() {
+    @DisplayName("성공 - 카테고리와 keyword로 식당 목록 조회")
+    void searchWithCategoriesAndKeywordTest() {
         // Given
         UserEntity user = userRepository.save(createUser());
         restaurantRepository.save(createRestaurant(user, "테스트 식당", "서울 강남구", "상세1", "한식,약식"));

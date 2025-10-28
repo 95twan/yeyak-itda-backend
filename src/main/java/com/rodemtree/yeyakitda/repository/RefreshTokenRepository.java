@@ -13,7 +13,6 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshTokenEntity
     @Query("SELECT rt FROM RefreshTokenEntity rt JOIN FETCH rt.user WHERE rt.token = :token")
     Optional<RefreshTokenEntity> findByTokenWithUser(@Param("token") String token);
 
-//    Optional<RefreshTokenEntity> findByToken(String token);
     Optional<RefreshTokenEntity> findByUser_Email(String email);
 
     @Modifying

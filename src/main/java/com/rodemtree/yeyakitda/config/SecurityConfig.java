@@ -6,7 +6,7 @@ import com.rodemtree.yeyakitda.dto.response.ResponseErrorCode;
 import com.rodemtree.yeyakitda.security.JwtAuthenticationFilter;
 import com.rodemtree.yeyakitda.security.LoginAuthenticationFilter;
 import com.rodemtree.yeyakitda.service.AuthService;
-import com.rodemtree.yeyakitda.util.JwtUtil;
+import com.rodemtree.yeyakitda.common.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

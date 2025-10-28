@@ -3,7 +3,6 @@ package com.rodemtree.yeyakitda.repository;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.rodemtree.yeyakitda.dto.EventBannerDto;
-import com.rodemtree.yeyakitda.entity.EventEntity;
 import com.rodemtree.yeyakitda.entity.QEventEntity;
 import lombok.RequiredArgsConstructor;
 

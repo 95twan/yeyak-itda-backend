@@ -8,8 +8,11 @@ import com.rodemtree.yeyakitda.exception.ReservationException;
 import com.rodemtree.yeyakitda.repository.ReservationRepository;
 import com.rodemtree.yeyakitda.repository.ReservationSlotRepository;
 import com.rodemtree.yeyakitda.repository.UserRepository;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.exception.LockAcquisitionException;
+import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -22,6 +25,7 @@ public class ReservationService {
     private final UserRepository userRepository;
     private final ReservationRepository reservationRepository;
     private final ReservationSlotRepository reservationSlotRepository;
+    private final EntityManager entityManager;
 
 
     @Transactional
@@ -29,6 +33,8 @@ public class ReservationService {
         UserEntity userEntity = userRepository.findByEmail(userEmail).orElseThrow(() -> new EntityNotFoundException("유저를 찾을 수 없습니다."));
         ReservationSlotEntity reservationSlotEntity;
         try {
+            entityManager.createNativeQuery("SET SESSION innodb_lock_wait_timeout = 10")
+                    .executeUpdate();
             reservationSlotEntity = reservationSlotRepository.findByIdWithPessimisticLock(reservationRequestDto.slotId()).orElseThrow(() -> new EntityNotFoundException("해당하는 예약 슬롯을 찾을 수 없습니다."));
         } catch (PessimisticLockingFailureException e) {
             throw new ReservationException("예약이 마감되었거나 다른 사용자가 선점했습니다. 다른 시간을 선택해주세요.");

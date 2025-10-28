@@ -1,5 +1,6 @@
 package com.rodemtree.yeyakitda.repository.mongodb;
 
+import com.rodemtree.yeyakitda.config.AbstractMongoDBContainer;
 import com.rodemtree.yeyakitda.document.OperatingHour;
 import com.rodemtree.yeyakitda.document.RestaurantOperatingHours;
 import org.junit.jupiter.api.AfterEach;
@@ -7,6 +8,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,8 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 
 @DataMongoTest
+@ActiveProfiles("test")
 @DisplayName("리포지토리 - RestaurantOperatingHours")
-class RestaurantOperatingHoursRepositoryTest {
+class RestaurantOperatingHoursRepositoryTest extends AbstractMongoDBContainer {
     @Autowired
     private RestaurantOperatingHoursRepository restaurantOperatingHoursRepository;
 

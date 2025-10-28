@@ -3,6 +3,7 @@ package com.rodemtree.yeyakitda.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
+import com.rodemtree.yeyakitda.config.AbstractIntegrationContainer;
 import com.rodemtree.yeyakitda.dto.request.LoginRequestDto;
 import com.rodemtree.yeyakitda.dto.request.SignUpRequestDto;
 import com.rodemtree.yeyakitda.dto.response.ResponseErrorCode;
@@ -27,6 +28,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,10 +53,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @DisplayName("컨트롤러 - 인증")
 @SpringBootTest
+@ActiveProfiles("test")
 @AutoConfigureMockMvc
-@Import(AuthControllerTest.TestController.class)
+@Import({AuthControllerTest.TestController.class})
 @Transactional
-class AuthControllerTest {
+class AuthControllerTest extends AbstractIntegrationContainer {
 
     @Autowired
     private MockMvc mockMvc;

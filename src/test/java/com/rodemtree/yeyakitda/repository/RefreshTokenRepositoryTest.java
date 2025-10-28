@@ -1,5 +1,6 @@
 package com.rodemtree.yeyakitda.repository;
 
+import com.rodemtree.yeyakitda.config.AbstractMySQLContainer;
 import com.rodemtree.yeyakitda.config.JpaConfig;
 import com.rodemtree.yeyakitda.entity.RefreshTokenEntity;
 import com.rodemtree.yeyakitda.entity.UserEntity;
@@ -8,15 +9,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
+@ActiveProfiles("test")
 @Import(JpaConfig.class)
-@DisplayName("리포지토리 - Refresh Token")
-class RefreshTokenRepositoryTest {
+@DisplayName("리포지토리 - RefreshToken")
+class RefreshTokenRepositoryTest extends AbstractMySQLContainer {
 
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
@@ -26,25 +30,32 @@ class RefreshTokenRepositoryTest {
 
 
     @Test
-    @DisplayName("성공 - User와 RefreshToken으로 RefreshToken을 저장한다.")
-    void saveTest() {
+    @DisplayName("성공 - token으로 refreshToken과 관계된 유저를 함께 조회")
+    void findByTokenWithUserTest() {
         // Given
         UserEntity userEntity = userRepository.save(createUser());
-        String refreshToken = "refresh-token";
-        RefreshTokenEntity refreshTokenEntity = createRefreshToken(userEntity, refreshToken);
+        String token = "refresh-token";
+        refreshTokenRepository.save(createRefreshToken(userEntity, token));
 
-        // When
-        RefreshTokenEntity savedRefreshToken = refreshTokenRepository.save(refreshTokenEntity);
-
-        // Then
-        assertThat(savedRefreshToken.getId()).isNotNull();
-        assertThat(savedRefreshToken.getToken()).isEqualTo(refreshToken);
-
+        // When & Then
+        Optional<RefreshTokenEntity> result = refreshTokenRepository.findByTokenWithUser(token);
+        assertThat(result).isPresent();
+        assertThat(result.get().getUser().getEmail()).isEqualTo(userEntity.getEmail());
     }
 
     @Test
-    @DisplayName("성공 - userId로 존재하는 refreshToken을 조회")
-    void findWithUserIdTest() {
+    @DisplayName("실패 - 존재하지 않은 token으로 refreshToken을 조회")
+    void findByNotExistTokenWithUserTest() {
+        // Given
+        String notExisttoken = "refresh-token";
+
+        // When & Then
+        assertThat(refreshTokenRepository.findByTokenWithUser(notExisttoken)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("성공 - user email로 refreshToken을 조회")
+    void findByUserEmailTest() {
         // Given
         UserEntity userEntity = userRepository.save(createUser());
         refreshTokenRepository.save(createRefreshToken(userEntity, "refresh-token"));
@@ -54,7 +65,7 @@ class RefreshTokenRepositoryTest {
     }
 
     @Test
-    @DisplayName("실패 - 없는 userId로 refreshToken을 조회")
+    @DisplayName("실패 - 없는 user email로 refreshToken을 조회")
     void findWithNotExistUserIdTest() {
         // Given
         String notExistEmail = "not@mail.com";
@@ -64,35 +75,13 @@ class RefreshTokenRepositoryTest {
     }
 
     @Test
-    @DisplayName("실패 - userId로 없는 refreshToken을 조회")
+    @DisplayName("실패 - user email로 없는 refreshToken을 조회")
     void findWithUserIdNotExistTest() {
         // Given
         UserEntity userEntity = userRepository.save(createUser());
 
         // When & Then
         assertThat(refreshTokenRepository.findByUser_Email(userEntity.getEmail())).isEmpty();
-    }
-
-    @Test
-    @DisplayName("성공 - token으로 refreshToken을 조회")
-    void findWithTokenTest() {
-        // Given
-        UserEntity userEntity = userRepository.save(createUser());
-        String token = "refresh-token";
-        refreshTokenRepository.save(createRefreshToken(userEntity, token));
-
-        // When & Then
-        assertThat(refreshTokenRepository.findByTokenWithUser(token)).isNotEmpty();
-    }
-
-    @Test
-    @DisplayName("실패 - 존재하지 않은 token으로 refreshToken을 조회")
-    void findWithNotExistTokenTest() {
-        // Given
-        String notExisttoken = "refresh-token";
-
-        // When & Then
-        assertThat(refreshTokenRepository.findByTokenWithUser(notExisttoken)).isEmpty();
     }
 
     private UserEntity createUser() {

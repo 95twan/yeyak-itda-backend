@@ -1,5 +1,6 @@
 package com.rodemtree.yeyakitda.service;
 
+import com.rodemtree.yeyakitda.config.AbstractIntegrationContainer;
 import com.rodemtree.yeyakitda.dto.request.ReservationRequestDto;
 import com.rodemtree.yeyakitda.entity.ReservationSlotEntity;
 import com.rodemtree.yeyakitda.entity.RestaurantEntity;
@@ -9,30 +10,32 @@ import com.rodemtree.yeyakitda.repository.ReservationRepository;
 import com.rodemtree.yeyakitda.repository.ReservationSlotRepository;
 import com.rodemtree.yeyakitda.repository.RestaurantRepository;
 import com.rodemtree.yeyakitda.repository.UserRepository;
+import org.hibernate.exception.LockAcquisitionException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @ActiveProfiles("test")
 @DisplayName("동시성 테스트 - 예약 서비스")
-public class ReservationConcurrencyTest {
+public class ReservationConcurrencyTest extends AbstractIntegrationContainer {
     @Autowired
     private ReservationService reservationService;
 
@@ -89,10 +92,10 @@ public class ReservationConcurrencyTest {
 
     @AfterEach
     void cleanup() {
-        reservationRepository.deleteAll();
-        reservationSlotRepository.deleteAll();
-        restaurantRepository.deleteAll();
-        userRepository.deleteAll();
+        reservationRepository.deleteAllInBatch();
+        reservationSlotRepository.deleteAllInBatch();
+        restaurantRepository.deleteAllInBatch();
+        userRepository.deleteAllInBatch();
     }
 
     @Test
@@ -128,8 +131,6 @@ public class ReservationConcurrencyTest {
         // Given
         ExecutorService executorService = Executors.newFixedThreadPool(2);
         CountDownLatch latch = new CountDownLatch(1);
-        CountDownLatch failLatch = new CountDownLatch(1);
-        AtomicBoolean timeoutExceptionOccurred = new AtomicBoolean(false);
 
         // When
         executorService.submit(() -> {
@@ -151,27 +152,19 @@ public class ReservationConcurrencyTest {
         latch.await(2, TimeUnit.SECONDS);
 
         // 스레드 2: 락 획득을 시도하지만 타임아웃을 기대하는 스레드
-        executorService.submit(() -> {
-            try {
-                // 락 타임아웃 힌트가 적용된 메서드를 호출
-                reservationService.createReservation("test@test.com", restaurantId, new ReservationRequestDto(slotId, 1));
-                fail("락 타임아웃 예외가 발생해야 합니다."); // 예외가 발생하지 않으면 테스트 실패
-            } catch (ReservationException e) {
-                System.out.println("스레드 2: 예상대로 락 타임아웃 예외 발생");
-                timeoutExceptionOccurred.set(true);
-                failLatch.countDown(); // 예외 발생을 알림
-            } catch (Exception e) {
-                fail("예상치 못한 예외 발생: " + e.getMessage());
-            }
+        Future<?> future = executorService.submit(() -> {
+            reservationService.createReservation("test@test.com", restaurantId, new ReservationRequestDto(slotId, 1));
+            return null;
         });
+
+        // 스레드 2 결과에서 예외 확인
+        assertThatThrownBy(future::get)
+                .hasCauseInstanceOf(ReservationException.class);
 
         executorService.shutdown();
         executorService.awaitTermination(15, TimeUnit.SECONDS);
 
-
         // Then
-        assertThat(timeoutExceptionOccurred.get()).isTrue();
-
         ReservationSlotEntity finalSlot = reservationSlotRepository.findById(slotId).orElseThrow();
         assertThat(finalSlot.getReservedCapacity()).isEqualTo(1);
     }
