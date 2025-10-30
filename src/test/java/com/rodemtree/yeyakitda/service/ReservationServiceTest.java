@@ -6,7 +6,6 @@ import com.rodemtree.yeyakitda.exception.ReservationException;
 import com.rodemtree.yeyakitda.repository.ReservationRepository;
 import com.rodemtree.yeyakitda.repository.ReservationSlotRepository;
 import com.rodemtree.yeyakitda.repository.UserRepository;
-import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.Query;
 import org.junit.jupiter.api.DisplayName;
@@ -16,7 +15,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -26,7 +24,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
@@ -48,9 +45,6 @@ class ReservationServiceTest {
     private ReservationSlotRepository reservationSlotRepository;
 
     @Mock
-    private EntityManager entityManager;
-
-    @Mock
     private Query query;
 
     @Test
@@ -70,7 +64,6 @@ class ReservationServiceTest {
         ReservationSlotEntity slot = createReservationSlot(restaurantEntity, reservedCapacity);
         ReservationEntity reservationEntity = createReservation(user, slot);
         given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
-        given(entityManager.createNativeQuery(anyString())).willReturn(query);
         given(reservationSlotRepository.findByIdWithPessimisticLock(slotId)).willReturn(Optional.of(slot));
         given(reservationRepository.save(any())).willReturn(reservationEntity);
 
@@ -121,7 +114,6 @@ class ReservationServiceTest {
 
         ReservationRequestDto reservationRequestDto = ReservationRequestDto.of(slotId, headCount);
         UserEntity user = createUser(userEmail);
-        given(entityManager.createNativeQuery(anyString())).willReturn(query);
         given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
         given(reservationSlotRepository.findByIdWithPessimisticLock(slotId))
                 .willThrow(new PessimisticLockingFailureException("락 획득 실패"));
@@ -146,7 +138,6 @@ class ReservationServiceTest {
         UserEntity user = createUser(userEmail);
         given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
         given(reservationSlotRepository.findByIdWithPessimisticLock(notExistSlotId)).willReturn(Optional.empty());
-        given(entityManager.createNativeQuery(anyString())).willReturn(query);
 
         // When & Then
         assertThatThrownBy(() -> reservationService.createReservation(userEmail, restaurantId, reservationRequestDto))
@@ -169,7 +160,6 @@ class ReservationServiceTest {
 
         given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
         given(reservationSlotRepository.findByIdWithPessimisticLock(reservationRequestDto.slotId())).willReturn(Optional.of(slot));
-        given(entityManager.createNativeQuery(anyString())).willReturn(query);
 
         // When & Then
         assertThatThrownBy(() -> reservationService.createReservation(userEmail, requestedRestaurantId, reservationRequestDto))
@@ -197,7 +187,6 @@ class ReservationServiceTest {
         ReservationEntity reservationEntity = createReservation(user, slot);
         given(userRepository.findByEmail(userEmail)).willReturn(Optional.of(user));
         given(reservationSlotRepository.findByIdWithPessimisticLock(slotId)).willReturn(Optional.of(slot));
-        given(entityManager.createNativeQuery(anyString())).willReturn(query);
 
         // When & Then
         assertThatThrownBy(() -> reservationService.createReservation(userEmail, restaurantId, reservationRequestDto))
