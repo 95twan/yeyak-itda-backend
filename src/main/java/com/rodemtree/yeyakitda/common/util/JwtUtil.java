@@ -24,12 +24,12 @@ public class JwtUtil {
 
     public JwtUtil(
             @Value("${jwt.secret}") String secret,
-            @Value("${jwt.expiration.access}") long accessTokenExpirationexpiration,
+            @Value("${jwt.expiration.access}") long accessTokenExpiration,
             @Value("${jwt.expiration.refresh}") long refreshTokenExpiration,
             Clock clock
     ) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-        this.accessTokenExpiration = accessTokenExpirationexpiration;
+        this.accessTokenExpiration = accessTokenExpiration;
         this.refreshTokenExpiration = refreshTokenExpiration;
         this.clock = clock;
     }

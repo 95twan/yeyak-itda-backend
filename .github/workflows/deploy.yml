@@ -9,15 +9,15 @@ jobs:
     # 이 작업이 실행될 가상 환경을 지정합니다. (Ubuntu 최신 버전)
     runs-on: ubuntu-latest
 
-    # 'build-and-push' 작업이 실행되는 동안 함께 실행될 서비스 컨테이너를 정의합니다.
-    services:
-      # 'mongodb'라는 이름의 서비스를 정의합니다.
-      mongodb:
-        # Docker Hub의 공식 MongoDB 이미지를 사용합니다.
-        image: mongo:latest
-        # 컨테이너의 27017 포트를 호스트(가상 환경)의 27017 포트에 연결합니다.
-        ports:
-          - 27017:27017
+#    # 'build-and-push' 작업이 실행되는 동안 함께 실행될 서비스 컨테이너를 정의합니다.
+#    services:
+#      # 'mongodb'라는 이름의 서비스를 정의합니다.
+#      mongodb:
+#        # Docker Hub의 공식 MongoDB 이미지를 사용합니다.
+#        image: mongo:latest
+#        # 컨테이너의 27017 포트를 호스트(가상 환경)의 27017 포트에 연결합니다.
+#        ports:
+#          - 27017:27017
 
     # 작업 내에서 실행될 단계(step)들을 순서대로 정의합니다.
     steps:
@@ -50,8 +50,8 @@ jobs:
       # GitHub Secrets에 저장된 Docker Hub 사용자 이름과 토큰을 사용하여 안전하게 로그인합니다.
       # 이 정보는 절대 코드에 직접 노출되지 않습니다.
       - name: Login to Docker Hub
-        env:
-          SPRING_DATA_MONGODB_URI: mongodb://localhost:27017/test
+#        env:
+#          SPRING_DATA_MONGODB_URI: mongodb://localhost:27017/test
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -94,3 +94,5 @@ jobs:
             -e MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY }} \
             -e MINIO_BUCKET=${{ secrets.MINIO_BUCKET }} \
             ${{ secrets.DOCKERHUB_USERNAME }}/yeyak-itda-backend:latest
+
+  workflow_dispatch:
