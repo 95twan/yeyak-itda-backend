@@ -4,6 +4,8 @@ on:
   push:
     branches: ["main"]
 
+  workflow_dispatch:
+
 jobs:
   build-and-push:
     # 이 작업이 실행될 가상 환경을 지정합니다. (Ubuntu 최신 버전)
@@ -95,4 +97,3 @@ jobs:
             -e MINIO_BUCKET=${{ secrets.MINIO_BUCKET }} \
             ${{ secrets.DOCKERHUB_USERNAME }}/yeyak-itda-backend:latest
 
-  workflow_dispatch:
